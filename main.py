@@ -5,7 +5,7 @@ import pyxel
 import enum
 
 # Const values
-SCREEN_WIDTH = 198
+SCREEN_WIDTH = 192
 SCREEN_HEIGHT = 128
 
 FAGO_SPEED = 2.0
