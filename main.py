@@ -11,6 +11,7 @@ SCREEN_HEIGHT = 128
 FAGO_SPEED = 2.0
 BULLET_SPEED = 1.5
 ENEMY_SPEED = 1.2
+LEVEL_SPEED = 0.1
 bullet_list = []
 enemy_list = []
 blast_list = []
@@ -222,15 +223,15 @@ class Level:
         self.tm = 0
         self.u = 0
         self.v = 0
-        self.w = 32
+        self.w = 64
         self.h = 16
 
     def update(self):
-        self.x -= FAGO_SPEED
-        startPos_x = 0
-        repeatwidth = self.w / 2
-        if startPos_x - self.x > repeatwidth:
-            self.x = startPos_x
+        self.x -= LEVEL_SPEED
+        # startPos_x = 0
+        repeat_width = self.w / 2
+        if 0 - self.x > repeat_width:
+            self.x = 0
 
     def draw(self):
         pyxel.bltm(self.x, 0, self.tm, self.u, self.v, self.w, self.h)
