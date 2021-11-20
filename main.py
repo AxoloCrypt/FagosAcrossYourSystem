@@ -218,14 +218,22 @@ class Blast:
 
 class Level:
     def __init__(self):
+        self.x = 0
         self.tm = 0
         self.u = 0
         self.v = 0
         self.w = 32
         self.h = 16
 
+    def update(self):
+        self.x -= FAGO_SPEED
+        startPos_x = 0
+        repeatwidth = self.w / 2
+        if startPos_x - self.x > repeatwidth:
+            self.x = startPos_x
+
     def draw(self):
-        pyxel.bltm(0, 0, self.tm, self.u, self.v, self.w, self.h)
+        pyxel.bltm(self.x, 0, self.tm, self.u, self.v, self.w, self.h)
 
 
 class App:
@@ -246,10 +254,11 @@ class App:
         self.update_play_scene()
 
     def update_play_scene(self):
+        self.level.update()
         # Spawn 10 enemies on screen
         if pyxel.frame_count % 6 == 0:
             if len(enemy_list) < 10:
-                Enemy(pyxel.width, random() * (pyxel.height - 16))
+                Enemy(pyxel.width, random() * (pyxel.height - 20))
 
         # print(len(enemy_list))
         # Check if elements of bullet_list and enemy_list intersect each other
