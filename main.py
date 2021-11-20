@@ -10,7 +10,7 @@ SCREEN_HEIGHT = 128
 
 FAGO_SPEED = 2.0
 BULLET_SPEED = 1.5
-ENEMY_SPEED = 1.2
+ENEMY_SPEED = 1.5
 LEVEL_SPEED = 0.1
 bullet_list = []
 enemy_list = []
@@ -64,6 +64,13 @@ def cleanup_list(list):
             i += 1
 
 
+# param: string, int, char_width default pyxel font width
+# Helper function for calculating the start x value for right aligned text.
+def right_text(text, page_width, char_width=pyxel.FONT_WIDTH):
+    text_width = len(text) * char_width
+    return page_width - (text_width + char_width)
+
+
 # Player class
 class Fago:
     def __init__(self, x, y):
@@ -104,16 +111,16 @@ class Fago:
 
     def update(self):
         if pyxel.btn(pyxel.KEY_UP):
-            self.y -= FAGO_SPEED
+            self.y -= self.speed
             self.direction = Directions.UP
         if pyxel.btn(pyxel.KEY_DOWN):
-            self.y += FAGO_SPEED
+            self.y += self.speed
             self.direction = Directions.DOWN
         if pyxel.btn(pyxel.KEY_LEFT):
-            self.x -= FAGO_SPEED
+            self.x -= self.speed
             self.direction = Directions.LEFT
         if pyxel.btn(pyxel.KEY_RIGHT):
-            self.x += FAGO_SPEED
+            self.x += self.speed
             self.direction = Directions.RIGHT
 
         self.x = max(self.x, 0)
@@ -125,8 +132,10 @@ class Fago:
         if pyxel.btnp(pyxel.KEY_X):
             if self.state == FagoState.MOVING:
                 self.state = FagoState.ATTACKING
+                self.speed -= 1
             else:
                 self.state = FagoState.MOVING
+                self.speed += 1
         if self.state == FagoState.ATTACKING:
             if pyxel.btnp(pyxel.KEY_SPACE):
                 Bullet(
@@ -223,7 +232,7 @@ class Level:
         self.tm = 0
         self.u = 0
         self.v = 0
-        self.w = 64
+        self.w = 72
         self.h = 16
 
     def update(self):
@@ -237,11 +246,23 @@ class Level:
         pyxel.bltm(self.x, 0, self.tm, self.u, self.v, self.w, self.h)
 
 
+class Hud:
+    def __init__(self):
+        self.score_text = ""
+        self.score_text_x = 0
+
+    def draw_score(self, score):
+        self.score_text = str(score)
+        self.score_text_x = right_text(self.score_text, 192)
+        pyxel.text(self.score_text_x - 10, 1, self.score_text, 8)
+
+
 class App:
     def __init__(self):
         pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, caption="Fagos", fps=60, fullscreen=False)
         pyxel.load("assets/pyxres.resources.pyxres")
         self.level = Level()
+        self.hud = Hud()
         self.fago = Fago(32, 32)
         self.fago_direction = Directions.DOWN
         self.flying_enemies_on_screen = 0
@@ -249,6 +270,7 @@ class App:
         self.dt = 0
         self.time_since_last_move = 0
         self.input_queue = collections.deque()  # Store direction changes
+        self.score = 0
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -258,8 +280,8 @@ class App:
         self.level.update()
         # Spawn 10 enemies on screen
         if pyxel.frame_count % 6 == 0:
-            if len(enemy_list) < 10:
-                Enemy(pyxel.width, random() * (pyxel.height - 20))
+            if len(enemy_list) < 15:
+                Enemy(pyxel.width, random() * (pyxel.height - 10))
 
         # print(len(enemy_list))
         # Check if elements of bullet_list and enemy_list intersect each other
@@ -278,6 +300,7 @@ class App:
                     blast_list.append(
                         Blast(a.x + 16 / 2, a.y + 16 / 2)
                     )
+                    self.score += 10
 
         # Check if the current enemy intersects with the player
         # If it is true, set the current enemy alive variable to False
@@ -311,6 +334,7 @@ class App:
     def draw(self):
         pyxel.cls(0)
         self.level.draw()
+        self.hud.draw_score(self.score)
         self.fago.draw()
         draw_list(bullet_list)
         draw_list(enemy_list)
