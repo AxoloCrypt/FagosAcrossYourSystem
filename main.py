@@ -38,7 +38,8 @@ class GameState(enum.Enum):
     GAMEOVER = 1,
     TITTLE = 2,
     BOSS_FIGHT = 3,
-    COMPLETED = 4
+    COMPLETED = 4,
+    TRANSITION = 5
 
 
 # param: list
@@ -97,24 +98,39 @@ class Fago:
                 if current_level == 0 and game_state == GameState.RUNNING:
                     sprite_x = 208
                     sprite_y = 0
-                    height = height * -1
+                elif game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 48
+                    sprite_y = 64
+                height = height * -1
             if self.direction == Directions.UP:
                 if current_level == 0 and game_state == GameState.RUNNING:
                     sprite_x = 208
                     sprite_y = 0
+                elif game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 48
+                    sprite_y = 64
             if self.direction == Directions.RIGHT:
                 if current_level == 0 and game_state == GameState.RUNNING:
                     sprite_x = 184
                     sprite_y = 0
-                    width = width * - 1
+                elif game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 24
+                    sprite_y = 64
+                width = width * - 1
             if self.direction == Directions.LEFT:
                 if current_level == 0 and game_state == GameState.RUNNING:
                     sprite_x = 184
                     sprite_y = 0
+                elif game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 24
+                    sprite_y = 64
         elif self.state == FagoState.ATTACKING:
             if current_level == 0 and game_state == GameState.RUNNING:
                 sprite_x = 136
                 sprite_y = 0
+            elif game_state == GameState.BOSS_FIGHT:
+                sprite_x = 0
+                sprite_y = 64
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, width, height)  # Draw player
 
     def update(self):
@@ -286,7 +302,7 @@ class Hud:
     def draw_lives(self, lives):
         self.lives_text = str(lives)
         pyxel.text(self.lives_text_x, 1, self.lives_text, 8)
-        pyxel.blt(self.lives_text_x - 10, 1, 0, 8, 16, 8, 9)
+        pyxel.blt(self.lives_text_x - 10, 1, 0, 8, 16, 8, 8)
 
 
 class App:
@@ -313,68 +329,100 @@ class App:
 
     def update_play_scene(self):
         self.level.update(self.game_state)
-        # Spawn 10 enemies on screen
-        if pyxel.frame_count % 6 == 0:
-            if len(enemy_list) < 12:
-                Enemy(pyxel.width, random() * (pyxel.height - 10))
 
-        # print(len(enemy_list))
-        # Check if elements of bullet_list and enemy_list intersect each other
-        # If the intersection is true, set the current enemy and bullet alive variable to False
-        for a in enemy_list:
-            for b in bullet_list:
+        if self.current_level == 0 and self.score == 10:
+            self.game_state = GameState.TRANSITION
+
+        if self.game_state == GameState.TRANSITION:
+            blast_list.append(
+                Blast(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+            )
+            cleanup_list(bullet_list)
+            cleanup_list(enemy_list)
+            self.game_state = GameState.BOSS_FIGHT
+
+        if self.game_state == GameState.RUNNING:
+            # Spawn 10 enemies on screen
+            if pyxel.frame_count % 6 == 0:
+                if len(enemy_list) < 12:
+                    Enemy(pyxel.width, random() * (pyxel.height - 10))
+
+            # print(len(enemy_list))
+            # Check if elements of bullet_list and enemy_list intersect each other
+            # If the intersection is true, set the current enemy and bullet alive variable to False
+            for a in enemy_list:
+                for b in bullet_list:
+                    if (
+                            a.x + a.w > b.x
+                            and b.x + b.w > a.x
+                            and a.y + a.h > b.y
+                            and b.y + b.h > a.y
+                    ):
+                        a.alive = False
+                        b.alive = False
+
+                        blast_list.append(
+                            Blast(a.x + 16 / 2, a.y + 16 / 2)
+                        )
+                        self.score += 10
+
+            # Check if the current enemy intersects with the player
+            # If it is true, set the current enemy alive variable to False
+            for enemy in enemy_list:
                 if (
-                        a.x + a.w > b.x
-                        and b.x + b.w > a.x
-                        and a.y + a.h > b.y
-                        and b.y + b.h > a.y
+                        self.fago.x + self.fago.w > enemy.x
+                        and enemy.x + enemy.w > self.fago.x
+                        and self.fago.y + self.fago.h > enemy.y
+                        and enemy.y + enemy.h > self.fago.y
                 ):
-                    a.alive = False
-                    b.alive = False
-
+                    enemy.alive = False
+                    self.lives -= 1
                     blast_list.append(
-                        Blast(a.x + 16 / 2, a.y + 16 / 2)
+                        Blast(
+                            self.fago.x + self.fago.w / 2,
+                            self.fago.y + self.fago.h / 2
+                        )
                     )
-                    self.score += 10
 
-        # Check if the current enemy intersects with the player
-        # If it is true, set the current enemy alive variable to False
-        for enemy in enemy_list:
-            if (
-                    self.fago.x + self.fago.w > enemy.x
-                    and enemy.x + enemy.w > self.fago.x
-                    and self.fago.y + self.fago.h > enemy.y
-                    and enemy.y + enemy.h > self.fago.y
-            ):
-                enemy.alive = False
-                self.lives -= 1
-                blast_list.append(
-                    Blast(
-                        self.fago.x + self.fago.w / 2,
-                        self.fago.y + self.fago.h / 2
-                    )
-                )
+            # Update player, bullet_list and enemy_list
+            self.fago.update()
+            update_list(bullet_list)
+            update_list(enemy_list)
+            update_list(blast_list)
 
-        # Update player, bullet_list and enemy_list
-        self.fago.update()
-        update_list(bullet_list)
-        update_list(enemy_list)
-        update_list(blast_list)
+            # Clean up lists
+            cleanup_list(bullet_list)
+            cleanup_list(enemy_list)
+            cleanup_list(blast_list)
 
-        # Clean up lists
-        cleanup_list(bullet_list)
-        cleanup_list(enemy_list)
-        cleanup_list(blast_list)
+        if self.game_state == GameState.BOSS_FIGHT:
+            self.fago.update()
+            update_list(bullet_list)
+            update_list(blast_list)
+            cleanup_list(bullet_list)
+            cleanup_list(blast_list)
+
+    def update_transition_scene(self):
+        pass
 
     def draw(self):
         pyxel.cls(0)
-        self.level.draw(self.current_level, self.game_state)
-        self.hud.draw_score(self.score)
-        self.hud.draw_lives(self.lives)
-        self.fago.draw(self.current_level, self.game_state)
-        draw_list(bullet_list)
-        draw_list(enemy_list)
-        draw_list(blast_list)
+        if self.game_state == GameState.RUNNING:
+            self.level.draw(self.current_level, self.game_state)
+            self.hud.draw_score(self.score)
+            self.hud.draw_lives(self.lives)
+            self.fago.draw(self.current_level, self.game_state)
+            draw_list(bullet_list)
+            draw_list(enemy_list)
+            draw_list(blast_list)
+
+        if self.game_state == GameState.BOSS_FIGHT:
+            self.level.draw(self.current_level, self.game_state)
+            self.hud.draw_score(self.score)
+            self.hud.draw_lives(self.lives)
+            self.fago.draw(self.current_level, self.game_state)
+            draw_list(bullet_list)
+            draw_list(blast_list)
 
 
 App()
