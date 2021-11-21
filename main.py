@@ -232,7 +232,7 @@ class Level:
         self.tm = 0
         self.u = 0
         self.v = 0
-        self.w = 72
+        self.w = 64
         self.h = 16
 
     def update(self):
@@ -250,11 +250,17 @@ class Hud:
     def __init__(self):
         self.score_text = ""
         self.score_text_x = 0
+        self.lives_text = ""
+        self.lives_text_x = 20
 
     def draw_score(self, score):
         self.score_text = str(score)
         self.score_text_x = right_text(self.score_text, 192)
         pyxel.text(self.score_text_x - 10, 1, self.score_text, 8)
+
+    def draw_lives(self, lives):
+        self.lives_text = str(lives)
+        pyxel.text(self.lives_text_x, 1, self.lives_text, 8)
 
 
 class App:
@@ -266,6 +272,7 @@ class App:
         self.fago = Fago(32, 32)
         self.fago_direction = Directions.DOWN
         self.flying_enemies_on_screen = 0
+        self.lives = 3
         self.time_last_frame = time.time()
         self.dt = 0
         self.time_since_last_move = 0
@@ -280,7 +287,7 @@ class App:
         self.level.update()
         # Spawn 10 enemies on screen
         if pyxel.frame_count % 6 == 0:
-            if len(enemy_list) < 15:
+            if len(enemy_list) < 12:
                 Enemy(pyxel.width, random() * (pyxel.height - 10))
 
         # print(len(enemy_list))
@@ -312,7 +319,7 @@ class App:
                     and enemy.y + enemy.h > self.fago.y
             ):
                 enemy.alive = False
-
+                self.lives -= 1
                 blast_list.append(
                     Blast(
                         self.fago.x + self.fago.w / 2,
@@ -335,6 +342,7 @@ class App:
         pyxel.cls(0)
         self.level.draw()
         self.hud.draw_score(self.score)
+        self.hud.draw_lives(self.lives)
         self.fago.draw()
         draw_list(bullet_list)
         draw_list(enemy_list)
