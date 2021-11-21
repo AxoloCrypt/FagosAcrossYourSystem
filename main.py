@@ -261,6 +261,7 @@ class Hud:
     def draw_lives(self, lives):
         self.lives_text = str(lives)
         pyxel.text(self.lives_text_x, 1, self.lives_text, 8)
+        pyxel.blt(self.lives_text_x - 10, 1, 0, 8, 16, 8, 9)
 
 
 class App:
