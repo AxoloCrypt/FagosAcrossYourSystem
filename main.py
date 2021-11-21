@@ -85,7 +85,7 @@ class Fago:
         self.state = FagoState.MOVING
         self.speed = FAGO_SPEED
 
-    def draw(self):
+    def draw(self, current_level, game_state):
         width = self.w
         height = self.h
         sprite_x = 208  # Variable to implement the sprite asset location x
@@ -94,22 +94,27 @@ class Fago:
 
         if self.state == FagoState.MOVING:
             if self.direction == Directions.DOWN:
-                sprite_x = 208
-                sprite_y = 0
-                height = height * -1
+                if current_level == 0 and game_state == GameState.RUNNING:
+                    sprite_x = 208
+                    sprite_y = 0
+                    height = height * -1
             if self.direction == Directions.UP:
-                sprite_x = 208
-                sprite_y = 0
+                if current_level == 0 and game_state == GameState.RUNNING:
+                    sprite_x = 208
+                    sprite_y = 0
             if self.direction == Directions.RIGHT:
-                sprite_x = 184
-                sprite_y = 0
-                width = width * - 1
+                if current_level == 0 and game_state == GameState.RUNNING:
+                    sprite_x = 184
+                    sprite_y = 0
+                    width = width * - 1
             if self.direction == Directions.LEFT:
-                sprite_x = 184
-                sprite_y = 0
+                if current_level == 0 and game_state == GameState.RUNNING:
+                    sprite_x = 184
+                    sprite_y = 0
         elif self.state == FagoState.ATTACKING:
-            sprite_x = 136
-            sprite_y = 0
+            if current_level == 0 and game_state == GameState.RUNNING:
+                sprite_x = 136
+                sprite_y = 0
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, width, height)  # Draw player
 
     def update(self):
@@ -299,7 +304,7 @@ class App:
         self.time_since_last_move = 0
         self.input_queue = collections.deque()  # Store direction changes
         self.score = 0
-        self.game_state = GameState.BOSS_FIGHT
+        self.game_state = GameState.RUNNING
         self.current_level = 0
         pyxel.run(self.update, self.draw)
 
@@ -366,7 +371,7 @@ class App:
         self.level.draw(self.current_level, self.game_state)
         self.hud.draw_score(self.score)
         self.hud.draw_lives(self.lives)
-        self.fago.draw()
+        self.fago.draw(self.current_level, self.game_state)
         draw_list(bullet_list)
         draw_list(enemy_list)
         draw_list(blast_list)
