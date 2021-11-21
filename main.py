@@ -35,7 +35,10 @@ class FagoState(enum.Enum):
 
 class GameState(enum.Enum):
     RUNNING = 0,
-    GAMEOVER = 1
+    GAMEOVER = 1,
+    TITTLE = 2,
+    BOSS_FIGHT = 3,
+    COMPLETED = 4
 
 
 # param: list
@@ -128,6 +131,13 @@ class Fago:
         self.y = max(self.y, 0)
         self.y = min(self.y, pyxel.height - self.h)
 
+        # Check if the character it's out of bounces
+        # if True keep the character in the selected position
+        if self.y < 8.0:
+            self.y = 8.0
+        elif self.y > 104.0:
+            self.y = 104.0
+
         # Change player state
         if pyxel.btnp(pyxel.KEY_X):
             if self.state == FagoState.MOVING:
@@ -200,6 +210,13 @@ class Enemy:
 
         self.x -= ENEMY_SPEED
 
+        # Check if the character it's out of bounces
+        # if True keep the character in the selected position
+        if self.y < 8.0:
+            self.y = 8.0
+        elif self.y > 104.0:
+            self.y = 104.0
+
         if self.x < 0:
             self.alive = False
 
@@ -235,15 +252,18 @@ class Level:
         self.w = 64
         self.h = 16
 
-    def update(self):
-        self.x -= LEVEL_SPEED
-        # startPos_x = 0
-        repeat_width = self.w / 2
-        if 0 - self.x > repeat_width:
-            self.x = 0
+    def update(self, state):
+        if state != GameState.BOSS_FIGHT:
+            self.x -= LEVEL_SPEED
+            repeat_width = self.w / 2
+            if 0 - self.x > repeat_width:
+                self.x = 0
 
-    def draw(self):
-        pyxel.bltm(self.x, 0, self.tm, self.u, self.v, self.w, self.h)
+    def draw(self, level, state):
+        pyxel.bltm(self.x, 0, level, self.u, self.v, self.w, self.h)
+
+        if state == GameState.BOSS_FIGHT:
+            pyxel.bltm(0, 0, level, 72, 0, self.w, self.h)
 
 
 class Hud:
@@ -279,13 +299,15 @@ class App:
         self.time_since_last_move = 0
         self.input_queue = collections.deque()  # Store direction changes
         self.score = 0
+        self.game_state = GameState.BOSS_FIGHT
+        self.current_level = 0
         pyxel.run(self.update, self.draw)
 
     def update(self):
         self.update_play_scene()
 
     def update_play_scene(self):
-        self.level.update()
+        self.level.update(self.game_state)
         # Spawn 10 enemies on screen
         if pyxel.frame_count % 6 == 0:
             if len(enemy_list) < 12:
@@ -341,7 +363,7 @@ class App:
 
     def draw(self):
         pyxel.cls(0)
-        self.level.draw()
+        self.level.draw(self.current_level, self.game_state)
         self.hud.draw_score(self.score)
         self.hud.draw_lives(self.lives)
         self.fago.draw()
