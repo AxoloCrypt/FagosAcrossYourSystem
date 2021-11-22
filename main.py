@@ -11,8 +11,10 @@ SCREEN_HEIGHT = 128
 FAGO_SPEED = 2.0
 BULLET_SPEED = 1.5
 ENEMY_SPEED = 1.5
+BOSS_SPEED = 2.0
 LEVEL_SPEED = 0.1
 bullet_list = []
+boss_bullet_list = []
 enemy_list = []
 blast_list = []
 
@@ -178,28 +180,43 @@ class Fago:
 
 
 class Bullet:
-    def __init__(self, x, y, is_enemy=False):
+    def __init__(self, x, y, is_enemy=False, is_boss=False):
         self.x = x
         self.y = y
         self.w = 8
         self.h = 8
         self.alive = True
         self.is_enemy = is_enemy
-        bullet_list.append(self)
+        self.is_boss = is_boss
+
+        if self.is_boss:
+            boss_bullet_list.append(self)
+        else:
+            bullet_list.append(self)
 
     def update(self):
-        self.x += BULLET_SPEED
-
         if self.is_enemy:
             self.x -= BULLET_SPEED
+        elif self.is_boss:
+            self.x -= BULLET_SPEED
+            if self.x + self.w + 1 < 0:
+                self.alive = False
+        else:
+            self.x += BULLET_SPEED
+            if self.x + self.w + 1 < 0:
+                self.alive = False
 
-        if self.x + self.w + 1 < 0:
-            self.alive = False
+    def draw(self, current_level, game_state):
+        sprite_x = 0
+        sprite_y = 0
 
-    def draw(self):
+        if current_level == 0 and game_state == GameState.RUNNING:
+            pass
+
         pyxel.blt(self.x, self.y, 0, 64, 8, self.w, self.h)
-
         if self.is_enemy:
+            pyxel.blt(self.x, self.y, 0, 40, 0, self.w, self.h)
+        if self.is_boss:
             pyxel.blt(self.x, self.y, 0, 40, 0, self.w, self.h)
 
 
@@ -243,6 +260,52 @@ class Enemy:
 
     def draw(self):
         pyxel.blt(self.x, self.y, 0, self.sprite_x, self.sprite_y, self.w, self.h)
+
+
+class Boss:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.health = 200
+        self.alive = True
+        self.w = 24
+        self.h = 32
+        self.offset = int(random() * 100)
+
+    def update(self):
+        if (pyxel.frame_count + self.offset) % 100 < 60:
+            self.y -= ENEMY_SPEED
+        else:
+            self.y += BOSS_SPEED
+
+        if pyxel.btnp(pyxel.KEY_SPACE):
+            boss_bullet_list.append(
+                Bullet(
+                    self.x + (self.w + 32) / 2, self.y + 32 / 2, is_boss=True
+                )
+            )
+            boss_bullet_list.append(
+                Bullet(
+                    self.x + (self.w + 8) / 2, self.y + 8 / 2, is_boss=True
+                )
+            )
+
+        if self.health == 0:
+            self.alive = False
+        # Check if the character it's out of bounces
+        # if True keep the character in the selected position
+        if self.y < 8.0:
+            self.y = 8.0
+        elif self.y > 96.0:
+            self.y = 96.0
+
+    def draw(self, current_level):
+        sprite_x = 0
+        sprite_y = 0
+        if current_level == 0:
+            sprite_x = 232
+            sprite_y = 24
+        pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
 
 
 class Blast:
@@ -299,10 +362,13 @@ class Hud:
         self.score_text_x = right_text(self.score_text, 192)
         pyxel.text(self.score_text_x - 10, 1, self.score_text, 8)
 
-    def draw_lives(self, lives):
+    def draw_lives(self, lives, current_level, game_state):
         self.lives_text = str(lives)
         pyxel.text(self.lives_text_x, 1, self.lives_text, 8)
-        pyxel.blt(self.lives_text_x - 10, 1, 0, 8, 16, 8, 8)
+        if current_level == 0 and game_state == GameState.RUNNING:
+            pyxel.blt(self.lives_text_x - 10, 1, 0, 8, 16, 8, 8)
+        elif GameState.BOSS_FIGHT:
+            pyxel.blt(self.lives_text_x - 10, 1, 0, 184, 48, 8, 8)
 
 
 class App:
@@ -312,6 +378,8 @@ class App:
         self.level = Level()
         self.hud = Hud()
         self.fago = Fago(32, 32)
+        self.bosses = []
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.fago_direction = Directions.DOWN
         self.flying_enemies_on_screen = 0
         self.lives = 3
@@ -331,15 +399,10 @@ class App:
         self.level.update(self.game_state)
 
         if self.current_level == 0 and self.score == 10:
-            self.game_state = GameState.TRANSITION
-
-        if self.game_state == GameState.TRANSITION:
-            blast_list.append(
-                Blast(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-            )
-            cleanup_list(bullet_list)
-            cleanup_list(enemy_list)
             self.game_state = GameState.BOSS_FIGHT
+
+        # if self.game_state == GameState.TRANSITION:
+        # self.update_transition_scene()
 
         if self.game_state == GameState.RUNNING:
             # Spawn 10 enemies on screen
@@ -397,20 +460,63 @@ class App:
 
         if self.game_state == GameState.BOSS_FIGHT:
             self.fago.update()
-            update_list(bullet_list)
-            update_list(blast_list)
-            cleanup_list(bullet_list)
-            cleanup_list(blast_list)
+            self.bosses[self.current_level].update()
 
-    def update_transition_scene(self):
-        pass
+            for a in bullet_list:
+                for b in boss_bullet_list:
+                    if (
+                            a.x + a.w > b.x
+                            and b.x + b.w > a.x
+                            and a.y + a.h > b.y
+                            and b.y + b.h > a.y
+                    ):
+                        a.alive = False
+                        b.alive = False
+
+                        blast_list.append(
+                            Blast(a.x + 16 / 2, a.y + 16 / 2)
+                        )
+
+            for b in bullet_list:
+                if (
+                        b.x + b.w > self.bosses[self.current_level].x
+                        and self.bosses[self.current_level].x + self.bosses[self.current_level].w > b.x
+                        and b.y + b.h > self.bosses[self.current_level].y
+                        and self.bosses[self.current_level].y + self.bosses[self.current_level].h > b.y
+                ):
+                    b.alive = False
+                    blast_list.append(
+                        Blast(b.x + 16 / 2, b.y + 16 / 2)
+                    )
+                    self.bosses[self.current_level].health -= 10
+
+            for bb in boss_bullet_list:
+                if (
+                        self.fago.x + self.fago.w > bb.x
+                        and bb.x + bb.w > self.fago.x
+                        and self.fago.y + self.fago.h > bb.y
+                        and bb.y + bb.h > self.fago.y
+                ):
+                    bb.alive = False
+                    blast_list.append(
+                        Blast(bb.x + 16 / 2, bb.y + 16 / 2)
+                    )
+                    self.lives -= 1
+
+            update_list(bullet_list)
+            update_list(boss_bullet_list)
+            update_list(blast_list)
+            cleanup_list(self.bosses)
+            cleanup_list(bullet_list)
+            cleanup_list(boss_bullet_list)
+            cleanup_list(blast_list)
 
     def draw(self):
         pyxel.cls(0)
         if self.game_state == GameState.RUNNING:
             self.level.draw(self.current_level, self.game_state)
             self.hud.draw_score(self.score)
-            self.hud.draw_lives(self.lives)
+            self.hud.draw_lives(self.lives, self.current_level, self.game_state)
             self.fago.draw(self.current_level, self.game_state)
             draw_list(bullet_list)
             draw_list(enemy_list)
@@ -419,9 +525,11 @@ class App:
         if self.game_state == GameState.BOSS_FIGHT:
             self.level.draw(self.current_level, self.game_state)
             self.hud.draw_score(self.score)
-            self.hud.draw_lives(self.lives)
+            self.hud.draw_lives(self.lives, self.current_level, self.game_state)
             self.fago.draw(self.current_level, self.game_state)
+            self.bosses[self.current_level].draw(self.current_level)
             draw_list(bullet_list)
+            draw_list(boss_bullet_list)
             draw_list(blast_list)
 
 
