@@ -30,11 +30,13 @@ class Directions(enum.Enum):
     UP = 3
 
 
+# State of the player during the game
 class FagoState(enum.Enum):
     MOVING = 0,
     ATTACKING = 1,
 
 
+# Different game states during the game
 class GameState(enum.Enum):
     RUNNING = 0,
     GAMEOVER = 1,
@@ -49,6 +51,13 @@ class GameState(enum.Enum):
 def draw_list(list):
     for elem in list:
         elem.draw()
+
+
+# param: list, int, enum
+# draw the elements of the bullet_list
+def draw_bullet_list(list, current_level, game_state):
+    for elem in list:
+        elem.draw(current_level, game_state)
 
 
 # param: list
@@ -206,14 +215,20 @@ class Bullet:
             if self.x + self.w + 1 < 0:
                 self.alive = False
 
+    # param: int, enum
+    # draw the bullet sprite depending on the current level and game state
     def draw(self, current_level, game_state):
         sprite_x = 0
         sprite_y = 0
 
         if current_level == 0 and game_state == GameState.RUNNING:
-            pass
+            sprite_x = 208
+            sprite_y = 56
+        elif game_state == GameState.BOSS_FIGHT:
+            sprite_x = 216
+            sprite_y = 56
 
-        pyxel.blt(self.x, self.y, 0, 64, 8, self.w, self.h)
+        pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
         if self.is_enemy:
             pyxel.blt(self.x, self.y, 0, 40, 0, self.w, self.h)
         if self.is_boss:
@@ -262,6 +277,7 @@ class Enemy:
         pyxel.blt(self.x, self.y, 0, self.sprite_x, self.sprite_y, self.w, self.h)
 
 
+# End level Boss class
 class Boss:
     def __init__(self, x, y):
         self.x = x
@@ -273,11 +289,13 @@ class Boss:
         self.offset = int(random() * 100)
 
     def update(self):
+        # Boss movement
         if (pyxel.frame_count + self.offset) % 100 < 60:
             self.y -= ENEMY_SPEED
         else:
             self.y += BOSS_SPEED
 
+        # Shoot two bullets when the player shoots
         if pyxel.btnp(pyxel.KEY_SPACE):
             boss_bullet_list.append(
                 Bullet(
@@ -292,6 +310,7 @@ class Boss:
 
         if self.health == 0:
             self.alive = False
+
         # Check if the character it's out of bounces
         # if True keep the character in the selected position
         if self.y < 8.0:
@@ -299,6 +318,8 @@ class Boss:
         elif self.y > 96.0:
             self.y = 96.0
 
+    # param: int
+    # draw the boss sprite depending of the current level
     def draw(self, current_level):
         sprite_x = 0
         sprite_y = 0
@@ -362,6 +383,7 @@ class Hud:
         self.score_text_x = right_text(self.score_text, 192)
         pyxel.text(self.score_text_x - 10, 1, self.score_text, 8)
 
+    # Draw the number of lives in the upper right corner
     def draw_lives(self, lives, current_level, game_state):
         self.lives_text = str(lives)
         pyxel.text(self.lives_text_x, 1, self.lives_text, 8)
@@ -410,7 +432,6 @@ class App:
                 if len(enemy_list) < 12:
                     Enemy(pyxel.width, random() * (pyxel.height - 10))
 
-            # print(len(enemy_list))
             # Check if elements of bullet_list and enemy_list intersect each other
             # If the intersection is true, set the current enemy and bullet alive variable to False
             for a in enemy_list:
@@ -458,10 +479,12 @@ class App:
             cleanup_list(enemy_list)
             cleanup_list(blast_list)
 
+        # Updating when the boss fight begins
         if self.game_state == GameState.BOSS_FIGHT:
             self.fago.update()
             self.bosses[self.current_level].update()
 
+            # Check collisions between player bullets and boss bullets
             for a in bullet_list:
                 for b in boss_bullet_list:
                     if (
@@ -477,6 +500,7 @@ class App:
                             Blast(a.x + 16 / 2, a.y + 16 / 2)
                         )
 
+            # Check collisions between player bullets and the current boss
             for b in bullet_list:
                 if (
                         b.x + b.w > self.bosses[self.current_level].x
@@ -490,6 +514,7 @@ class App:
                     )
                     self.bosses[self.current_level].health -= 10
 
+            # Check collisions between the player and boss bullets
             for bb in boss_bullet_list:
                 if (
                         self.fago.x + self.fago.w > bb.x
@@ -502,10 +527,12 @@ class App:
                         Blast(bb.x + 16 / 2, bb.y + 16 / 2)
                     )
                     self.lives -= 1
-
+            # Update lists
             update_list(bullet_list)
             update_list(boss_bullet_list)
             update_list(blast_list)
+
+            # Cleanup lists
             cleanup_list(self.bosses)
             cleanup_list(bullet_list)
             cleanup_list(boss_bullet_list)
@@ -515,22 +542,29 @@ class App:
         pyxel.cls(0)
         if self.game_state == GameState.RUNNING:
             self.level.draw(self.current_level, self.game_state)
+
             self.hud.draw_score(self.score)
             self.hud.draw_lives(self.lives, self.current_level, self.game_state)
+
             self.fago.draw(self.current_level, self.game_state)
-            draw_list(bullet_list)
+
+            # Draw lists
+            draw_bullet_list(bullet_list, self.current_level, self.game_state)
             draw_list(enemy_list)
             draw_list(blast_list)
 
         if self.game_state == GameState.BOSS_FIGHT:
             self.level.draw(self.current_level, self.game_state)
+
             self.hud.draw_score(self.score)
             self.hud.draw_lives(self.lives, self.current_level, self.game_state)
+
             self.fago.draw(self.current_level, self.game_state)
-            self.bosses[self.current_level].draw(self.current_level)
-            draw_list(bullet_list)
-            draw_list(boss_bullet_list)
+
+            self.bosses[self.current_level].draw(self.current_level)  # Draw current boss
+            draw_bullet_list(bullet_list, self.current_level, self.game_state)
+            draw_bullet_list(boss_bullet_list, self.current_level, self.game_state)
             draw_list(blast_list)
 
 
-App()
+App()  # Kickstart program
