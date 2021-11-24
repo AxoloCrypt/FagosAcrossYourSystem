@@ -174,9 +174,11 @@ class Fago:
         # Change player state
         if pyxel.btnp(pyxel.KEY_X):
             if self.state == FagoState.MOVING:
+                pyxel.play(3, 3)
                 self.state = FagoState.ATTACKING
                 self.speed -= 1
             else:
+                pyxel.play(3, 3)
                 self.state = FagoState.MOVING
                 self.speed += 1
         if self.state == FagoState.ATTACKING:
