@@ -9,7 +9,8 @@ SCREEN_WIDTH = 192
 SCREEN_HEIGHT = 128
 
 FAGO_SPEED = 2.0
-BULLET_SPEED = 1.5
+BULLET_SPEED = 2.5
+BOSS_BULLET_SPEED = 2.0
 ENEMY_SPEED = 1.5
 BOSS_SPEED = 2.0
 LEVEL_SPEED = 0.1
@@ -207,7 +208,7 @@ class Bullet:
         if self.is_enemy:
             self.x -= BULLET_SPEED
         elif self.is_boss:
-            self.x -= BULLET_SPEED
+            self.x -= BOSS_BULLET_SPEED
             if self.x + self.w + 1 < 0:
                 self.alive = False
         else:
@@ -290,8 +291,8 @@ class Boss:
 
     def update(self):
         # Boss movement
-        if (pyxel.frame_count + self.offset) % 100 < 60:
-            self.y -= ENEMY_SPEED
+        if (pyxel.frame_count + self.offset) % 96 < 60:
+            self.y -= BOSS_SPEED
         else:
             self.y += BOSS_SPEED
 
@@ -299,7 +300,7 @@ class Boss:
         if pyxel.btnp(pyxel.KEY_SPACE):
             boss_bullet_list.append(
                 Bullet(
-                    self.x + (self.w + 32) / 2, self.y + 32 / 2, is_boss=True
+                    self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
                 )
             )
             boss_bullet_list.append(
@@ -342,6 +343,29 @@ class Blast:
         self.radius += 1
         if self.radius > 8:
             self.alive = False
+
+    def draw(self):
+        pyxel.circ(self.x, self.y, self.radius, 7)
+        pyxel.circb(self.x, self.y, self.radius, 10)
+
+
+class TransitionBlast:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.radius = 1
+
+    def update_blast(self):
+
+        self.radius += 1
+
+        if self.radius >= 100:
+            self.radius = 0
+
+        if self.radius == 0:
+            return self.radius
+
+        return 1
 
     def draw(self):
         pyxel.circ(self.x, self.y, self.radius, 7)
@@ -399,12 +423,14 @@ class App:
         pyxel.load("assets/pyxres.resources.pyxres")
         self.level = Level()
         self.hud = Hud()
+        self.transition_blast = TransitionBlast(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.fago = Fago(32, 32)
         self.bosses = []
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.fago_direction = Directions.DOWN
         self.flying_enemies_on_screen = 0
-        self.lives = 3
+        self.lives = 10
+        self.enemies_killed = 0
         self.time_last_frame = time.time()
         self.dt = 0
         self.time_since_last_move = 0
@@ -415,13 +441,19 @@ class App:
         pyxel.run(self.update, self.draw)
 
     def update(self):
-        self.update_play_scene()
+        if self.game_state == GameState.RUNNING or self.game_state == GameState.BOSS_FIGHT:
+            self.update_play_scene()
+        if self.game_state == GameState.TRANSITION:
+            self.update_transition_scene()
 
     def update_play_scene(self):
         self.level.update(self.game_state)
 
-        if self.current_level == 0 and self.score == 10:
-            self.game_state = GameState.BOSS_FIGHT
+        if self.lives <= 0:
+            self.game_state = GameState.GAMEOVER
+
+        if self.current_level == 0 and self.score == 300 and self.game_state == GameState.RUNNING:
+            self.game_state = GameState.TRANSITION
 
         # if self.game_state == GameState.TRANSITION:
         # self.update_transition_scene()
@@ -429,8 +461,12 @@ class App:
         if self.game_state == GameState.RUNNING:
             # Spawn 10 enemies on screen
             if pyxel.frame_count % 6 == 0:
-                if len(enemy_list) < 12:
+                if len(enemy_list) < 10:
                     Enemy(pyxel.width, random() * (pyxel.height - 10))
+
+            if self.enemies_killed == 20:
+                self.enemies_killed = 0
+                self.lives += 1
 
             # Check if elements of bullet_list and enemy_list intersect each other
             # If the intersection is true, set the current enemy and bullet alive variable to False
@@ -449,6 +485,7 @@ class App:
                             Blast(a.x + 16 / 2, a.y + 16 / 2)
                         )
                         self.score += 10
+                        self.enemies_killed += 1
 
             # Check if the current enemy intersects with the player
             # If it is true, set the current enemy alive variable to False
@@ -523,10 +560,20 @@ class App:
                         and bb.y + bb.h > self.fago.y
                 ):
                     bb.alive = False
+                    self.lives -= 1
                     blast_list.append(
                         Blast(bb.x + 16 / 2, bb.y + 16 / 2)
                     )
-                    self.lives -= 1
+
+            # Check collision between player and the boss
+            if (
+                    self.bosses[self.current_level].x + self.bosses[self.current_level].w > self.fago.x
+                    and self.fago.x + self.fago.w > self.bosses[self.current_level].x
+                    and self.bosses[self.current_level].y + self.bosses[self.current_level].h > self.fago.y
+                    and self.fago.y + self.fago.h > self.bosses[self.current_level].y
+            ):
+                self.lives -= 1
+
             # Update lists
             update_list(bullet_list)
             update_list(boss_bullet_list)
@@ -537,6 +584,19 @@ class App:
             cleanup_list(bullet_list)
             cleanup_list(boss_bullet_list)
             cleanup_list(blast_list)
+
+    def update_transition_scene(self):
+        for a in blast_list:
+            a.alive = False
+        for b in bullet_list:
+            b.alive = False
+        for c in enemy_list:
+            c.alive = False
+
+        aux = self.transition_blast.update_blast()
+
+        if aux == 0:
+            self.game_state = GameState.BOSS_FIGHT
 
     def draw(self):
         pyxel.cls(0)
@@ -552,6 +612,9 @@ class App:
             draw_bullet_list(bullet_list, self.current_level, self.game_state)
             draw_list(enemy_list)
             draw_list(blast_list)
+
+        if self.game_state == GameState.TRANSITION:
+            self.transition_blast.draw()
 
         if self.game_state == GameState.BOSS_FIGHT:
             self.level.draw(self.current_level, self.game_state)
