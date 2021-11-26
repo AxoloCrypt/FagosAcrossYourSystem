@@ -183,6 +183,7 @@ class Fago:
                 self.speed += 1
         if self.state == FagoState.ATTACKING:
             if pyxel.btnp(pyxel.KEY_SPACE):
+                pyxel.play(3, 4)
                 Bullet(
                     self.x + (self.w + 8) / 2, self.y + 8 / 2
                 )  # Instantiate a Bullet class object
@@ -454,7 +455,7 @@ class App:
         if self.lives <= 0:
             self.game_state = GameState.GAMEOVER
 
-        if self.current_level == 0 and self.score == 300 and self.game_state == GameState.RUNNING:
+        if self.current_level == 0 and self.score >= 300 and self.game_state == GameState.RUNNING:
             self.game_state = GameState.TRANSITION
 
         # if self.game_state == GameState.TRANSITION:
