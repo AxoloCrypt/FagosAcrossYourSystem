@@ -44,7 +44,8 @@ class GameState(enum.Enum):
     TITTLE = 2,
     BOSS_FIGHT = 3,
     COMPLETED = 4,
-    TRANSITION = 5
+    TRANSITION = 5,
+    PAUSED = 6
 
 
 # param: list
@@ -292,25 +293,26 @@ class Boss:
         self.h = 32
         self.offset = int(random() * 100)
 
-    def update(self):
+    def update(self, current_level):
         # Boss movement
         if (pyxel.frame_count + self.offset) % 96 < 60:
             self.y -= BOSS_SPEED
         else:
             self.y += BOSS_SPEED
 
-        # Shoot two bullets when the player shoots
-        if pyxel.btnp(pyxel.KEY_SPACE):
-            boss_bullet_list.append(
-                Bullet(
-                    self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
+        if current_level == 0:
+            # Shoot two bullets when the player shoots
+            if pyxel.btnp(pyxel.KEY_SPACE):
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
+                    )
                 )
-            )
-            boss_bullet_list.append(
-                Bullet(
-                    self.x + (self.w + 8) / 2, self.y + 8 / 2, is_boss=True
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y + 8 / 2, is_boss=True
+                    )
                 )
-            )
 
         if self.health == 0:
             self.alive = False
@@ -440,6 +442,7 @@ class App:
         self.input_queue = collections.deque()  # Store direction changes
         self.score = 0
         self.game_state = GameState.RUNNING
+        self.previous_game_state = None
         self.current_level = 0
         pyxel.run(self.update, self.draw)
 
@@ -448,14 +451,20 @@ class App:
             self.update_play_scene()
         if self.game_state == GameState.TRANSITION:
             self.update_transition_scene()
+        if self.game_state == GameState.PAUSED:
+            self.update_paused_scene()
 
     def update_play_scene(self):
         self.level.update(self.game_state)
+        if pyxel.btnp(pyxel.KEY_TAB):
+            self.previous_game_state = self.game_state
+            self.game_state = GameState.PAUSED
 
         if self.lives <= 0:
             self.game_state = GameState.GAMEOVER
 
         if self.current_level == 0 and self.score >= 300 and self.game_state == GameState.RUNNING:
+            pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
 
         # if self.game_state == GameState.TRANSITION:
@@ -487,6 +496,7 @@ class App:
                         blast_list.append(
                             Blast(a.x + 16 / 2, a.y + 16 / 2)
                         )
+                        pyxel.play(2, 5)
                         self.score += 10
                         self.enemies_killed += 1
 
@@ -522,7 +532,7 @@ class App:
         # Updating when the boss fight begins
         if self.game_state == GameState.BOSS_FIGHT:
             self.fago.update()
-            self.bosses[self.current_level].update()
+            self.bosses[self.current_level].update(self.current_level)
 
             # Check collisions between player bullets and boss bullets
             for a in bullet_list:
@@ -589,17 +599,17 @@ class App:
             cleanup_list(blast_list)
 
     def update_transition_scene(self):
-        for a in blast_list:
-            a.alive = False
-        for b in bullet_list:
-            b.alive = False
-        for c in enemy_list:
-            c.alive = False
-
+        bullet_list.clear()
+        blast_list.clear()
+        enemy_list.clear()
         aux = self.transition_blast.update_blast()
 
         if aux == 0:
             self.game_state = GameState.BOSS_FIGHT
+
+    def update_paused_scene(self):
+        if pyxel.btnp(pyxel.KEY_ENTER):
+            self.game_state = self.previous_game_state
 
     def draw(self):
         pyxel.cls(0)
