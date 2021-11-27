@@ -129,6 +129,12 @@ class Fago:
                 elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 128
                     sprite_y = 40
+                if current_level == 2 and game_state == GameState.RUNNING:
+                    sprite_x = 64
+                    sprite_y = 128
+                elif current_level == 2 and GameState.BOSS_FIGHT:
+                    sprite_x = 80
+                    sprite_y = 128
                 height = height * -1
             if self.direction == Directions.UP:
                 if current_level == 0 and GameState.RUNNING == game_state:
@@ -137,12 +143,18 @@ class Fago:
                 elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 48
                     sprite_y = 64
-                if current_level == 1 and game_state == GameState.RUNNING:
+                if not (not (current_level == 1) or not (game_state == GameState.RUNNING)):  # De Morgan's law
                     sprite_x = 96
                     sprite_y = 40
                 elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 128
                     sprite_y = 40
+                if current_level == 2 and game_state == GameState.RUNNING:
+                    sprite_x = 64
+                    sprite_y = 128
+                elif current_level == 2 and GameState.BOSS_FIGHT:
+                    sprite_x = 80
+                    sprite_y = 128
             if self.direction == Directions.RIGHT:
                 if current_level == 0 and game_state == GameState.RUNNING:
                     sprite_x = 184
@@ -156,6 +168,12 @@ class Fago:
                 elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 112
                     sprite_y = 40
+                if current_level == 2 and game_state == GameState.RUNNING:
+                    sprite_x = 96
+                    sprite_y = 128
+                elif current_level == 2 and game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 112
+                    sprite_y = 128
                 width = width * - 1
             if self.direction == Directions.LEFT:
                 if current_level == 0 and GameState.RUNNING == game_state:
@@ -164,12 +182,18 @@ class Fago:
                 elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 24
                     sprite_y = 64
-                if current_level == 1 and game_state == GameState.RUNNING:
+                if not (not (current_level == 1) or not (game_state == GameState.RUNNING)):  # De Morgan's law
                     sprite_x = 72
                     sprite_y = 40
                 elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 112
                     sprite_y = 40
+                if current_level == 2 and game_state == GameState.RUNNING:
+                    sprite_x = 96
+                    sprite_y = 128
+                elif current_level == 2 and game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 112
+                    sprite_y = 128
         elif self.state == FagoState.ATTACKING:
             if current_level == 0 and game_state == GameState.RUNNING:
                 sprite_x = 136
@@ -183,6 +207,12 @@ class Fago:
             elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
                 sprite_x = 120
                 sprite_y = 64
+            if current_level == 2 and game_state == GameState.RUNNING:
+                sprite_x = 64
+                sprite_y = 112
+            elif current_level == 2 and game_state == GameState.BOSS_FIGHT:
+                sprite_x = 80
+                sprite_y = 112
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, width, height)  # Draw player
 
     def update(self):
@@ -199,6 +229,7 @@ class Fago:
             self.x += self.speed
             self.direction = Directions.RIGHT
 
+        # Define max and min values for coordinates x,y
         self.x = max(self.x, 0)
         self.x = min(self.x, pyxel.width - self.w)
         self.y = max(self.y, 0)
@@ -282,6 +313,12 @@ class Bullet:
         elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
             sprite_x = 216
             sprite_y = 64
+        if current_level == 2 and game_state == GameState.RUNNING:
+            sprite_x = 224
+            sprite_y = 64
+        elif current_level == 2 and game_state == GameState.BOSS_FIGHT:
+            sprite_x = 224
+            sprite_y = 56
 
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
         if self.is_enemy:
@@ -318,6 +355,9 @@ class Enemy:
             elif current_level == 1:
                 self.sprite_x = 0
                 self.sprite_y = 40
+            elif current_level == 2:
+                self.sprite_x = 96
+                self.sprite_y = 112
 
         else:
             self.y += ENEMY_SPEED
@@ -328,6 +368,9 @@ class Enemy:
             elif current_level == 1:
                 self.sprite_x = 24
                 self.sprite_y = 40
+            elif current_level == 2:
+                self.sprite_x = 120
+                self.sprite_y = 112
 
         self.x -= ENEMY_SPEED
 
@@ -427,6 +470,10 @@ class Boss:
             sprite_x = 144
             sprite_y = 40
             self.h = 24
+        if current_level == 2:
+            sprite_x = 216
+            sprite_y = 112
+            self.w = 16
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
 
 
@@ -492,6 +539,8 @@ class Level:
 
         if state == GameState.RUNNING:
             pyxel.bltm(self.x, 0, level, self.u, self.v, self.w, self.h)
+        elif state == GameState.TITTLE:
+            pyxel.bltm(0, 0, 3, self.u, self.v, 16, 16)
 
         if state == GameState.BOSS_FIGHT:
             pyxel.bltm(0, 0, level, 72, 0, self.w, self.h)
@@ -527,6 +576,10 @@ class Hud:
         elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
             pyxel.text(self.lives_text_x, 1, self.lives_text, 5)
             pyxel.blt(self.lives_text_x - 10, 1, 0, 192, 48, 8, 8)
+        if current_level == 2 and game_state == GameState.RUNNING:
+            pyxel.blt(self.lives_text_x - 10, 1, 0, 48, 128, 8, 8)
+        elif current_level == 2 and game_state == GameState.BOSS_FIGHT:
+            pyxel.blt(self.lives_text_x - 10, 1, 0, 56, 128, 8, 8)
 
 
 class App:
@@ -545,7 +598,7 @@ class App:
         self.lives = 10
         self.enemies_killed = 0
         self.score = 0
-        self.game_state = GameState.RUNNING
+        self.game_state = GameState.TITTLE
         self.previous_game_state = None
         self.current_level = 0
         pyxel.run(self.update, self.draw)
@@ -561,6 +614,8 @@ class App:
             self.update_gameover_scene()
         if self.game_state == GameState.LEVEL_COMPLETE:
             self.update_level_completed_scene()
+        if self.game_state == GameState.TITTLE:
+            self.update_tittle_scene()
 
     def update_play_scene(self):
         self.level.update(self.game_state)
@@ -727,6 +782,10 @@ class App:
         if pyxel.btnp(pyxel.KEY_ENTER):
             self.game_state = self.previous_game_state
 
+    def update_tittle_scene(self):
+        if pyxel.btnp(pyxel.KEY_ENTER):
+            self.game_state = GameState.RUNNING
+
     def update_gameover_scene(self):
         boss_bullet_list.clear()
         bullet_list.clear()
@@ -785,6 +844,8 @@ class App:
 
     def draw(self):
         pyxel.cls(0)
+        if self.game_state == GameState.TITTLE:
+            self.level.draw(0, self.game_state)
         if self.game_state == GameState.RUNNING:
             self.level.draw(self.current_level, self.game_state)
 
