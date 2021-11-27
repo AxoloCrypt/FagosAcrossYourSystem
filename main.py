@@ -251,12 +251,12 @@ class Bullet:
     def update(self):
         if self.is_enemy:
             self.x -= BULLET_SPEED
-        elif self.is_boss:
+        elif self.is_boss and not self.is_vertical:
             self.x -= BOSS_BULLET_SPEED
             if self.x + self.w + 1 < 0:
                 self.alive = False
         elif self.is_boss and self.is_vertical:
-            self.y -= BULLET_SPEED
+            self.y += 1.0
             if self.y > 104.0:
                 self.alive = False
         else:
@@ -288,6 +288,8 @@ class Bullet:
             pyxel.blt(self.x, self.y, 0, 40, 0, self.w, self.h)
         if self.is_boss:
             pyxel.blt(self.x, self.y, 0, 40, 0, self.w, self.h)
+            if current_level == 1:
+                pyxel.blt(self.x, self.y, 0, 48, 0, self.w, self.h)
 
 
 class Enemy:
@@ -374,6 +376,34 @@ class Boss:
                         self.x + (self.w + 8) / 2, self.y + 8 / 2, is_boss=True
                     )
                 )
+        if current_level == 1:
+            if pyxel.btnp(pyxel.KEY_SPACE):
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
+                    )
+                )
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y + 8 / 2, is_boss=True
+                    )
+                )
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y + 72 / 2, is_boss=True
+                    )
+                )
+
+                boss_bullet_list.append(
+                    Bullet(
+                        SCREEN_WIDTH / 2, 9.0, is_boss=True, is_vertical=True
+                    )
+                )
+                boss_bullet_list.append(
+                    Bullet(
+                        5.0, 9.0, is_boss=True, is_vertical=True
+                    )
+                )
 
         if self.health == 0:
             self.alive = False
@@ -396,6 +426,7 @@ class Boss:
         if current_level == 1:
             sprite_x = 144
             sprite_y = 40
+            self.h = 24
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
 
 
@@ -475,10 +506,13 @@ class Hud:
         self.lives_text = ""
         self.lives_text_x = 20
 
-    def draw_score(self, score):
+    def draw_score(self, score, level):
         self.score_text = str(score)
         self.score_text_x = right_text(self.score_text, 192)
         pyxel.text(self.score_text_x - 10, 1, self.score_text, 8)
+
+        if level == 1:
+            pyxel.text(self.score_text_x - 10, 1, self.score_text, 5)
 
     # Draw the number of lives in the upper right corner
     def draw_lives(self, lives, current_level, game_state):
@@ -491,6 +525,7 @@ class Hud:
         if current_level == 1 and game_state == GameState.RUNNING:
             pyxel.blt(self.lives_text_x - 10, 1, 0, 184, 48, 8, 8)
         elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
+            pyxel.text(self.lives_text_x, 1, self.lives_text, 5)
             pyxel.blt(self.lives_text_x - 10, 1, 0, 192, 48, 8, 8)
 
 
@@ -503,6 +538,7 @@ class App:
         self.transition_blast = TransitionBlast(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.fago = Fago(32, 32)
         self.bosses = []
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.fago_direction = Directions.DOWN
@@ -538,7 +574,7 @@ class App:
         if self.current_level == 0 and self.score >= 300 and self.game_state == GameState.RUNNING:
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
-        if self.current_level == 1 and self.score >= 810 and self.game_state == GameState.RUNNING:
+        if self.current_level == 1 and self.score >= 2500 and self.game_state == GameState.RUNNING:
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
 
@@ -684,7 +720,7 @@ class App:
         aux = self.transition_blast.update_blast()  # assistant variable
 
         #
-        if aux == 0:    # When aux is 0, change the game state
+        if aux == 0:  # When aux is 0, change the game state
             self.game_state = GameState.BOSS_FIGHT
 
     def update_paused_scene(self):
@@ -719,6 +755,7 @@ class App:
         self.bosses = []
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.lives = 10
         self.enemies_killed = 0
         self.score = 0
@@ -736,6 +773,7 @@ class App:
         self.bosses = []
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.lives = self.lives
         self.enemies_killed = self.enemies_killed
         self.score = self.score
@@ -750,7 +788,7 @@ class App:
         if self.game_state == GameState.RUNNING:
             self.level.draw(self.current_level, self.game_state)
 
-            self.hud.draw_score(self.score)
+            self.hud.draw_score(self.score, self.current_level)
             self.hud.draw_lives(self.lives, self.current_level, self.game_state)
 
             self.fago.draw(self.current_level, self.game_state)
@@ -766,7 +804,7 @@ class App:
         if self.game_state == GameState.BOSS_FIGHT:
             self.level.draw(self.current_level, self.game_state)
 
-            self.hud.draw_score(self.score)
+            self.hud.draw_score(self.score, self.current_level)
             self.hud.draw_lives(self.lives, self.current_level, self.game_state)
 
             self.fago.draw(self.current_level, self.game_state)
