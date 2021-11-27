@@ -1,5 +1,3 @@
-import collections
-import time
 from random import random
 import pyxel
 import enum
@@ -45,7 +43,8 @@ class GameState(enum.Enum):
     BOSS_FIGHT = 3,
     COMPLETED = 4,
     TRANSITION = 5,
-    PAUSED = 6
+    PAUSED = 6,
+    LEVEL_COMPLETE = 7
 
 
 # param: list
@@ -67,6 +66,11 @@ def draw_bullet_list(list, current_level, game_state):
 def update_list(list):
     for elem in list:
         elem.update()
+
+
+def update_enemy_list(list, current_level):
+    for elem in list:
+        elem.update(current_level)
 
 
 # param: list
@@ -111,38 +115,68 @@ class Fago:
                 if current_level == 0 and game_state == GameState.RUNNING:
                     sprite_x = 208
                     sprite_y = 0
-                elif game_state == GameState.BOSS_FIGHT:
+                elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 48
                     sprite_y = 64
+                if current_level == 1 and game_state == GameState.RUNNING:
+                    sprite_x = 96
+                    sprite_y = 40
+                elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 128
+                    sprite_y = 40
                 height = height * -1
             if self.direction == Directions.UP:
-                if current_level == 0 and game_state == GameState.RUNNING:
+                if current_level == 0 and GameState.RUNNING == game_state:
                     sprite_x = 208
                     sprite_y = 0
-                elif game_state == GameState.BOSS_FIGHT:
+                elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 48
                     sprite_y = 64
+                if current_level == 1 and game_state == GameState.RUNNING:
+                    sprite_x = 96
+                    sprite_y = 40
+                elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 128
+                    sprite_y = 40
             if self.direction == Directions.RIGHT:
                 if current_level == 0 and game_state == GameState.RUNNING:
                     sprite_x = 184
                     sprite_y = 0
-                elif game_state == GameState.BOSS_FIGHT:
+                elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 24
                     sprite_y = 64
+                if current_level == 1 and game_state == GameState.RUNNING:
+                    sprite_x = 72
+                    sprite_y = 40
+                elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 112
+                    sprite_y = 40
                 width = width * - 1
             if self.direction == Directions.LEFT:
-                if current_level == 0 and game_state == GameState.RUNNING:
+                if current_level == 0 and GameState.RUNNING == game_state:
                     sprite_x = 184
                     sprite_y = 0
-                elif game_state == GameState.BOSS_FIGHT:
+                elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
                     sprite_x = 24
                     sprite_y = 64
+                if current_level == 1 and game_state == GameState.RUNNING:
+                    sprite_x = 72
+                    sprite_y = 40
+                elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
+                    sprite_x = 112
+                    sprite_y = 40
         elif self.state == FagoState.ATTACKING:
             if current_level == 0 and game_state == GameState.RUNNING:
                 sprite_x = 136
                 sprite_y = 0
-            elif game_state == GameState.BOSS_FIGHT:
+            elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
                 sprite_x = 0
+                sprite_y = 64
+            if current_level == 1 and game_state == GameState.RUNNING:
+                sprite_x = 48
+                sprite_y = 40
+            elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
+                sprite_x = 120
                 sprite_y = 64
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, width, height)  # Draw player
 
@@ -229,9 +263,15 @@ class Bullet:
         if current_level == 0 and game_state == GameState.RUNNING:
             sprite_x = 208
             sprite_y = 56
-        elif game_state == GameState.BOSS_FIGHT:
+        elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
             sprite_x = 216
             sprite_y = 56
+        if current_level == 1 and game_state == GameState.RUNNING:
+            sprite_x = 208
+            sprite_y = 64
+        elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
+            sprite_x = 216
+            sprite_y = 64
 
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
         if self.is_enemy:
@@ -256,15 +296,26 @@ class Enemy:
 
     # Move the enemy up and down while moving to -x coordinates
     # set if it is alive or not
-    def update(self):
+    def update(self, current_level):
         if (pyxel.frame_count + self.offset) % 60 < 30:
             self.y -= ENEMY_SPEED
-            self.sprite_x = 64
-            self.sprite_y = 24
+
+            if current_level == 0:
+                self.sprite_x = 64
+                self.sprite_y = 24
+            elif current_level == 1:
+                self.sprite_x = 0
+                self.sprite_y = 40
+
         else:
             self.y += ENEMY_SPEED
-            self.sprite_x = 104
-            self.sprite_y = 0
+
+            if current_level == 0:
+                self.sprite_x = 104
+                self.sprite_y = 0
+            elif current_level == 1:
+                self.sprite_x = 24
+                self.sprite_y = 40
 
         self.x -= ENEMY_SPEED
 
@@ -332,6 +383,9 @@ class Boss:
         if current_level == 0:
             sprite_x = 232
             sprite_y = 24
+        if current_level == 1:
+            sprite_x = 144
+            sprite_y = 40
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
 
 
@@ -350,8 +404,8 @@ class Blast:
             self.alive = False
 
     def draw(self):
-        pyxel.circ(self.x, self.y, self.radius, 7)
-        pyxel.circb(self.x, self.y, self.radius, 10)
+        pyxel.circ(self.x, self.y, self.radius, 8)
+        pyxel.circb(self.x, self.y, self.radius, 2)
 
 
 class TransitionBlast:
@@ -418,13 +472,17 @@ class Hud:
         pyxel.text(self.lives_text_x, 1, self.lives_text, 8)
         if current_level == 0 and game_state == GameState.RUNNING:
             pyxel.blt(self.lives_text_x - 10, 1, 0, 8, 16, 8, 8)
-        elif GameState.BOSS_FIGHT:
+        elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
+            pyxel.blt(self.lives_text_x - 10, 1, 0, 200, 48, 8, 8)
+        if current_level == 1 and game_state == GameState.RUNNING:
             pyxel.blt(self.lives_text_x - 10, 1, 0, 184, 48, 8, 8)
+        elif current_level == 1 and game_state == GameState.BOSS_FIGHT:
+            pyxel.blt(self.lives_text_x - 10, 1, 0, 192, 48, 8, 8)
 
 
 class App:
     def __init__(self):
-        pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, caption="Fagos", fps=60, fullscreen=False)
+        pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, caption="Fagos Across Your System", fps=60, fullscreen=False)
         pyxel.load("assets/pyxres.resources.pyxres")
         self.level = Level()
         self.hud = Hud()
@@ -433,13 +491,8 @@ class App:
         self.bosses = []
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.fago_direction = Directions.DOWN
-        self.flying_enemies_on_screen = 0
         self.lives = 10
         self.enemies_killed = 0
-        self.time_last_frame = time.time()
-        self.dt = 0
-        self.time_since_last_move = 0
-        self.input_queue = collections.deque()  # Store direction changes
         self.score = 0
         self.game_state = GameState.RUNNING
         self.previous_game_state = None
@@ -453,6 +506,10 @@ class App:
             self.update_transition_scene()
         if self.game_state == GameState.PAUSED:
             self.update_paused_scene()
+        if self.game_state == GameState.GAMEOVER:
+            self.update_gameover_scene()
+        if self.game_state == GameState.LEVEL_COMPLETE:
+            self.update_level_completed_scene()
 
     def update_play_scene(self):
         self.level.update(self.game_state)
@@ -521,7 +578,7 @@ class App:
             # Update player, bullet_list and enemy_list
             self.fago.update()
             update_list(bullet_list)
-            update_list(enemy_list)
+            update_enemy_list(enemy_list, self.current_level)
             update_list(blast_list)
 
             # Clean up lists
@@ -587,6 +644,10 @@ class App:
             ):
                 self.lives -= 1
 
+            if not self.bosses[self.current_level].alive:
+                self.game_state = GameState.LEVEL_COMPLETE
+                self.score += 500
+
             # Update lists
             update_list(bullet_list)
             update_list(boss_bullet_list)
@@ -610,6 +671,53 @@ class App:
     def update_paused_scene(self):
         if pyxel.btnp(pyxel.KEY_ENTER):
             self.game_state = self.previous_game_state
+
+    def update_gameover_scene(self):
+        boss_bullet_list.clear()
+        bullet_list.clear()
+        blast_list.clear()
+
+        if pyxel.btnp(pyxel.KEY_ENTER):
+            self.start_new_game()
+        if pyxel.btnp(pyxel.KEY_Q):
+            pyxel.quit()
+
+    def update_level_completed_scene(self):
+        boss_bullet_list.clear()
+        bullet_list.clear()
+        blast_list.clear()
+
+        if pyxel.btnp(pyxel.KEY_ENTER):
+            self.start_new_level()
+
+    def start_new_game(self):
+        bullet_list.clear()
+        enemy_list.clear()
+        blast_list.clear()
+        self.fago = Fago(32, 32)
+        self.fago_direction = Directions.DOWN
+        self.bosses = []
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.lives = 10
+        self.enemies_killed = 0
+        self.score = 0
+        self.game_state = GameState.RUNNING
+        self.previous_game_state = None
+        self.current_level = 0
+
+    def start_new_level(self):
+        bullet_list.clear()
+        enemy_list.clear()
+        blast_list.clear()
+
+        self.lives = self.lives
+        self.enemies_killed = self.enemies_killed
+        self.score = self.score
+        self.game_state = GameState.RUNNING
+        self.previous_game_state = None
+        self.current_level += 1
+        self.fago = Fago(32, 32)
+        self.fago_direction = Directions.DOWN
 
     def draw(self):
         pyxel.cls(0)
