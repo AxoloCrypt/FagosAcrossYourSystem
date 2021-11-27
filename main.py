@@ -68,6 +68,8 @@ def update_list(list):
         elem.update()
 
 
+# param: list
+# update the elements of the enemy_list depending on the level
 def update_enemy_list(list, current_level):
     for elem in list:
         elem.update(current_level)
@@ -110,6 +112,9 @@ class Fago:
         sprite_y = 0  # Variable to implement the sprite asset location y
         # The sprite_x and sprite_y values will change depending the direction of the player
 
+        # Select the sprite_x and sprite_x depending of the direction, current level and game state
+        # If else yanderev style
+        # My future me it's gonna hate this but it works
         if self.state == FagoState.MOVING:
             if self.direction == Directions.DOWN:
                 if current_level == 0 and game_state == GameState.RUNNING:
@@ -228,7 +233,7 @@ class Fago:
 
 
 class Bullet:
-    def __init__(self, x, y, is_enemy=False, is_boss=False):
+    def __init__(self, x, y, is_enemy=False, is_boss=False, is_vertical=False):
         self.x = x
         self.y = y
         self.w = 8
@@ -236,6 +241,7 @@ class Bullet:
         self.alive = True
         self.is_enemy = is_enemy
         self.is_boss = is_boss
+        self.is_vertical = is_vertical
 
         if self.is_boss:
             boss_bullet_list.append(self)
@@ -248,6 +254,10 @@ class Bullet:
         elif self.is_boss:
             self.x -= BOSS_BULLET_SPEED
             if self.x + self.w + 1 < 0:
+                self.alive = False
+        elif self.is_boss and self.is_vertical:
+            self.y -= BULLET_SPEED
+            if self.y > 104.0:
                 self.alive = False
         else:
             self.x += BULLET_SPEED
@@ -448,10 +458,14 @@ class Level:
                 self.x = 0
 
     def draw(self, level, state):
-        pyxel.bltm(self.x, 0, level, self.u, self.v, self.w, self.h)
+
+        if state == GameState.RUNNING:
+            pyxel.bltm(self.x, 0, level, self.u, self.v, self.w, self.h)
 
         if state == GameState.BOSS_FIGHT:
             pyxel.bltm(0, 0, level, 72, 0, self.w, self.h)
+        elif level == 1 and state == GameState.BOSS_FIGHT:
+            pyxel.bltm(0, 0, level, 96, 0, self.w, self.h)
 
 
 class Hud:
@@ -490,6 +504,7 @@ class App:
         self.fago = Fago(32, 32)
         self.bosses = []
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.fago_direction = Directions.DOWN
         self.lives = 10
         self.enemies_killed = 0
@@ -521,6 +536,9 @@ class App:
             self.game_state = GameState.GAMEOVER
 
         if self.current_level == 0 and self.score >= 300 and self.game_state == GameState.RUNNING:
+            pyxel.play(3, 6)
+            self.game_state = GameState.TRANSITION
+        if self.current_level == 1 and self.score >= 810 and self.game_state == GameState.RUNNING:
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
 
@@ -663,9 +681,10 @@ class App:
         bullet_list.clear()
         blast_list.clear()
         enemy_list.clear()
-        aux = self.transition_blast.update_blast()
+        aux = self.transition_blast.update_blast()  # assistant variable
 
-        if aux == 0:
+        #
+        if aux == 0:    # When aux is 0, change the game state
             self.game_state = GameState.BOSS_FIGHT
 
     def update_paused_scene(self):
@@ -690,6 +709,7 @@ class App:
         if pyxel.btnp(pyxel.KEY_ENTER):
             self.start_new_level()
 
+    # Reset the stats after the player it's killed
     def start_new_game(self):
         bullet_list.clear()
         enemy_list.clear()
@@ -698,6 +718,7 @@ class App:
         self.fago_direction = Directions.DOWN
         self.bosses = []
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.lives = 10
         self.enemies_killed = 0
         self.score = 0
@@ -705,11 +726,16 @@ class App:
         self.previous_game_state = None
         self.current_level = 0
 
+    # Method to start a new level once the previous level is completed
+    # It keeps the previous stats
     def start_new_level(self):
         bullet_list.clear()
         enemy_list.clear()
         blast_list.clear()
 
+        self.bosses = []
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.lives = self.lives
         self.enemies_killed = self.enemies_killed
         self.score = self.score
