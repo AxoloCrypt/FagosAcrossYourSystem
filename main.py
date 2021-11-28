@@ -1,3 +1,4 @@
+import time
 from random import random
 import pyxel
 import enum
@@ -92,6 +93,18 @@ def cleanup_list(list):
 def right_text(text, page_width, char_width=pyxel.FONT_WIDTH):
     text_width = len(text) * char_width
     return page_width - (text_width + char_width)
+
+
+# param: int
+# Select the sound of the boss depending on the current level
+def select_boss_sound(current_level):
+    switch = {
+        0: 3,
+        1: 2,
+        2: 1
+    }
+
+    return switch.get(current_level, 0)
 
 
 # Player class
@@ -264,24 +277,38 @@ class Fago:
 
 
 class Bullet:
-    def __init__(self, x, y, is_enemy=False, is_boss=False, is_vertical=False):
+    def __init__(self, x, y, is_bacteria=False,
+                 is_boss=False, is_vertical=False, is_diagonal_up=False, is_diagonal_down=False):
         self.x = x
         self.y = y
         self.w = 8
         self.h = 8
         self.alive = True
-        self.is_enemy = is_enemy
+        self.is_bacteria = is_bacteria
         self.is_boss = is_boss
         self.is_vertical = is_vertical
+        self.is_diagonal_up = is_diagonal_up
+        self.is_diagonal_down = is_diagonal_down
 
-        if self.is_boss:
+        if self.is_boss or self.is_bacteria:
             boss_bullet_list.append(self)
         else:
             bullet_list.append(self)
 
     def update(self):
-        if self.is_enemy:
-            self.x -= BULLET_SPEED
+        if self.is_bacteria and self.is_diagonal_up:
+            self.x -= 1.0
+            self.y -= 1.0
+
+            if self.x + self.w + 1 < 0:
+                self.alive = False
+        elif self.is_bacteria and self.is_diagonal_down:
+            self.x -= 1.0
+            self.y += 1.0
+
+            if self.x + self.w + 1 < 0:
+                self.alive = False
+
         elif self.is_boss and not self.is_vertical:
             self.x -= BOSS_BULLET_SPEED
             if self.x + self.w + 1 < 0:
@@ -292,7 +319,7 @@ class Bullet:
                 self.alive = False
         else:
             self.x += BULLET_SPEED
-            if self.x + self.w + 1 < 0:
+            if self.x + self.w + 1 > SCREEN_WIDTH:
                 self.alive = False
 
     # param: int, enum
@@ -321,12 +348,14 @@ class Bullet:
             sprite_y = 56
 
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
-        if self.is_enemy:
-            pyxel.blt(self.x, self.y, 0, 40, 0, self.w, self.h)
+        if self.is_bacteria:
+            pyxel.blt(self.x, self.y, 0, 48, 8, self.w, self.h)
         if self.is_boss:
             pyxel.blt(self.x, self.y, 0, 40, 0, self.w, self.h)
             if current_level == 1:
                 pyxel.blt(self.x, self.y, 0, 48, 0, self.w, self.h)
+            if current_level == 2:
+                pyxel.blt(self.x, self.y, 0, 48, 8, self.w, self.h)
 
 
 class Enemy:
@@ -406,6 +435,7 @@ class Boss:
         else:
             self.y += BOSS_SPEED
 
+        # Boss attacks
         if current_level == 0:
             # Shoot two bullets when the player shoots
             if pyxel.btnp(pyxel.KEY_SPACE):
@@ -447,8 +477,35 @@ class Boss:
                         5.0, 9.0, is_boss=True, is_vertical=True
                     )
                 )
+        if current_level == 2:
+            if pyxel.btnp(pyxel.KEY_SPACE):
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
+                    )
+                )
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y + 9 / 2, is_boss=True
+                    )
+                )
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y + 72 / 2, is_boss=True
+                    )
+                )
+
+                boss_bullet_list.append(
+                    Bullet(
+                        5.0, 9.0, is_boss=True, is_vertical=True
+                    )
+                )
 
         if self.health == 0:
+            time.sleep(1)
+            self.health = -10
+
+        if self.health == -10:
             self.alive = False
 
         # Check if the character it's out of bounces
@@ -475,6 +532,55 @@ class Boss:
             sprite_y = 112
             self.w = 16
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
+
+        if self.health == 0:
+            pyxel.blt(self.x, self.y, 0, 0, 152, 16, 32)
+
+
+# Support bacteria class from the final boss
+class Bacteria:
+    def __init__(self, x, y, direction=Directions.UP):
+        self.x = x
+        self.y = y
+        self.direction = direction
+        self.health = 60
+        self.alive = True
+        self.w = -24
+        self.h = 16
+        self.offset = int(random() * 120)
+
+    def update(self):
+        # print((pyxel.frame_count + self.offset) % 96)
+        # Bacteria movement in the x coordinate
+        if (pyxel.frame_count + self.offset) % 96 < 60:
+            self.x -= 1.0
+        else:
+            self.x += 1.0
+
+        if self.x < pyxel.width / 2:
+            self.x = (pyxel.width / 2)
+        elif self.x > pyxel.width:
+            self.x = pyxel.width
+
+        if pyxel.btnp(pyxel.KEY_SPACE):
+            if self.direction == Directions.DOWN:
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y, is_bacteria=True, is_diagonal_up=True
+                    )
+                )
+            else:
+                boss_bullet_list.append(
+                    Bullet(
+                        self.x + (self.w + 8) / 2, self.y, is_bacteria=True, is_diagonal_down=True
+                    )
+                )
+
+            if self.health == 0:
+                self.alive = False
+
+    def draw(self):
+        pyxel.blt(self.x, self.y, 0, 112, 88, self.w, self.h)
 
 
 class Blast:
@@ -529,7 +635,8 @@ class Level:
         self.h = 16
 
     def update(self, state):
-        if state != GameState.BOSS_FIGHT:
+        # Move the level tilemap and repeat it constantly while the game is in GameState.Running
+        if state != GameState.BOSS_FIGHT and state == GameState.RUNNING:
             self.x -= LEVEL_SPEED
             repeat_width = self.w / 2
             if 0 - self.x > repeat_width:
@@ -567,6 +674,7 @@ class Hud:
     def draw_lives(self, lives, current_level, game_state):
         self.lives_text = str(lives)
         pyxel.text(self.lives_text_x, 1, self.lives_text, 8)
+        # Another if else yanderev style to draw the mini fago on the upper left
         if current_level == 0 and game_state == GameState.RUNNING:
             pyxel.blt(self.lives_text_x - 10, 1, 0, 8, 16, 8, 8)
         elif current_level == 0 and game_state == GameState.BOSS_FIGHT:
@@ -584,8 +692,11 @@ class Hud:
 
 class App:
     def __init__(self):
+        # Init screen
         pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, caption="Fagos Across Your System", fps=60, fullscreen=False)
+        # File where the resources are loaded
         pyxel.load("assets/pyxres.resources.pyxres")
+        # Initialize variables
         self.level = Level()
         self.hud = Hud()
         self.transition_blast = TransitionBlast(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -594,10 +705,14 @@ class App:
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bacterias = []
+        self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 8.0))
+        self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 104, Directions.DOWN))
         self.fago_direction = Directions.DOWN
         self.lives = 10
         self.enemies_killed = 0
         self.score = 0
+        self.previous_score = 0
         self.game_state = GameState.TITTLE
         self.previous_game_state = None
         self.current_level = 0
@@ -606,16 +721,24 @@ class App:
     def update(self):
         if self.game_state == GameState.RUNNING or self.game_state == GameState.BOSS_FIGHT:
             self.update_play_scene()
+
         if self.game_state == GameState.TRANSITION:
             self.update_transition_scene()
+
         if self.game_state == GameState.PAUSED:
             self.update_paused_scene()
+
         if self.game_state == GameState.GAMEOVER:
             self.update_gameover_scene()
+
         if self.game_state == GameState.LEVEL_COMPLETE:
             self.update_level_completed_scene()
+
         if self.game_state == GameState.TITTLE:
             self.update_tittle_scene()
+
+        if self.game_state == GameState.COMPLETED:
+            self.update_game_complete_scene()
 
     def update_play_scene(self):
         self.level.update(self.game_state)
@@ -630,6 +753,9 @@ class App:
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
         if self.current_level == 1 and self.score >= 2500 and self.game_state == GameState.RUNNING:
+            pyxel.play(3, 6)
+            self.game_state = GameState.TRANSITION
+        if self.current_level == 2 and self.score >= 4000:
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
 
@@ -728,6 +854,8 @@ class App:
                     blast_list.append(
                         Blast(b.x + 16 / 2, b.y + 16 / 2)
                     )
+                    sound = select_boss_sound(self.current_level)
+                    pyxel.play(2, sound)
                     self.bosses[self.current_level].health -= 10
 
             # Check collisions between the player and boss bullets
@@ -762,6 +890,33 @@ class App:
             update_list(boss_bullet_list)
             update_list(blast_list)
 
+            # Update support bacterias from the final boss
+            if self.current_level == 2:
+                # Check collisions between player bullets and bacteria enemies
+                for b in bullet_list:
+                    for ba in self.bacterias:
+                        # print(f'bullet x: {b.x}, bullet w: {b.w}, b.x + b.w = {b.x + b.w} > {ba.w} ?')
+                        if (
+                                b.x + b.w > ba.x
+                                and ba.x + ba.w < b.x
+                                and b.y + b.h > b.y
+                                and ba.y + ba.h > b.y
+                        ):
+                            b.alive = False
+                            blast_list.append(
+                                Blast(b.x + 16 / 2, b.y + 16 / 2)
+                            )
+                            ba.health -= 10
+
+                        if not ba.alive:
+                            self.score += 250
+
+                if not self.bosses[2].alive:
+                    self.game_state = GameState.COMPLETED
+
+                update_list(self.bacterias)
+                cleanup_list(self.bacterias)
+
             # Cleanup lists
             cleanup_list(self.bosses)
             cleanup_list(bullet_list)
@@ -792,7 +947,10 @@ class App:
         blast_list.clear()
 
         if pyxel.btnp(pyxel.KEY_ENTER):
-            self.start_new_game()
+            if self.current_level == 2:
+                self.restart_final_level()
+            else:
+                self.start_new_game()
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
 
@@ -803,6 +961,16 @@ class App:
 
         if pyxel.btnp(pyxel.KEY_ENTER):
             self.start_new_level()
+
+    def update_game_complete_scene(self):
+        boss_bullet_list.clear()
+        bullet_list.clear()
+        blast_list.clear()
+        self.bosses.clear()
+        self.bacterias.clear()
+
+        if pyxel.btnp(pyxel.KEY_Q):
+            pyxel.quit()
 
     # Reset the stats after the player it's killed
     def start_new_game(self):
@@ -836,9 +1004,32 @@ class App:
         self.lives = self.lives
         self.enemies_killed = self.enemies_killed
         self.score = self.score
+        self.previous_score = self.score
         self.game_state = GameState.RUNNING
         self.previous_game_state = None
         self.current_level += 1
+        self.fago = Fago(32, 32)
+        self.fago_direction = Directions.DOWN
+
+    def restart_final_level(self):
+        bullet_list.clear()
+        boss_bullet_list.clear()
+        enemy_list.clear()
+        blast_list.clear()
+
+        self.bosses = []
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bacterias = []
+        self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 8.0))
+        self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 104, Directions.DOWN))
+        self.lives = 10
+        self.enemies_killed = 0
+        self.score = self.previous_score
+        self.game_state = GameState.RUNNING
+        self.previous_game_state = None
+        self.current_level = 2
         self.fago = Fago(32, 32)
         self.fago_direction = Directions.DOWN
 
@@ -874,6 +1065,10 @@ class App:
             draw_bullet_list(bullet_list, self.current_level, self.game_state)
             draw_bullet_list(boss_bullet_list, self.current_level, self.game_state)
             draw_list(blast_list)
+
+            # Draw boss support bacterias
+            if self.current_level == 2:
+                draw_list(self.bacterias)
 
 
 App()  # Kickstart program
