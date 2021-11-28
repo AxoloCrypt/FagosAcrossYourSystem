@@ -911,6 +911,16 @@ class App:
                         if not ba.alive:
                             self.score += 250
 
+                # Check collisions between the player and the bacterias
+                for ba in self.bacterias:
+                    if(
+                        ba.x + ba.w < self.fago.x
+                        and self.fago.x + self.fago.w > ba.x
+                        and ba.y + ba.h > self.fago.y
+                        and self.fago.y + self.fago.h > ba.y
+                    ):
+                        self.lives -= 1
+
                 if not self.bosses[2].alive:
                     self.game_state = GameState.COMPLETED
 
