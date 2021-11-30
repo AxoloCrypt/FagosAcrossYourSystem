@@ -534,7 +534,12 @@ class Boss:
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, self.w, self.h)
 
         if self.health == 0:
-            pyxel.blt(self.x, self.y, 0, 0, 152, 16, 32)
+            if current_level == 0:
+                pyxel.blt(self.x, self.y, 0, 0, 152, 16, 32)
+            elif current_level == 1:
+                pyxel.blt(self.x, self.y, 0, 216, 192, 16, 32)
+            elif current_level == 2:
+                pyxel.blt(self.x, self.y, 0, 240, 192, 16, 32)
 
 
 # Support bacteria class from the final boss
@@ -648,6 +653,12 @@ class Level:
             pyxel.bltm(self.x, 0, level, self.u, self.v, self.w, self.h)
         elif state == GameState.TITTLE:
             pyxel.bltm(0, 0, 3, self.u, self.v, 64, 16)
+        elif level == 0 and state == GameState.LEVEL_COMPLETE:
+            pyxel.bltm(0, 0, 4, self.u, self.v, 64, 16)
+        elif level == 1 and state == GameState.LEVEL_COMPLETE:
+            pyxel.bltm(0, 0, 5, self.u, self.v, 64, 16)
+        elif state == GameState.GAMEOVER:
+            pyxel.bltm(0, 0, 6, self.u, self.v, 64, 16)
 
         if state == GameState.BOSS_FIGHT:
             pyxel.bltm(0, 0, level, 72, 0, self.w, self.h)
@@ -913,11 +924,11 @@ class App:
 
                 # Check collisions between the player and the bacterias
                 for ba in self.bacterias:
-                    if(
-                        ba.x + ba.w < self.fago.x
-                        and self.fago.x + self.fago.w > ba.x
-                        and ba.y + ba.h > self.fago.y
-                        and self.fago.y + self.fago.h > ba.y
+                    if (
+                            ba.x + ba.w < self.fago.x
+                            and self.fago.x + self.fago.w > ba.x
+                            and ba.y + ba.h > self.fago.y
+                            and self.fago.y + self.fago.h > ba.y
                     ):
                         self.lives -= 1
 
@@ -1062,6 +1073,12 @@ class App:
 
         if self.game_state == GameState.TRANSITION:
             self.transition_blast.draw()
+
+        if self.game_state == GameState.LEVEL_COMPLETE:
+            self.level.draw(self.current_level, self.game_state)
+
+        if self.game_state == GameState.GAMEOVER:
+            self.level.draw(self.current_level, self.game_state)
 
         if self.game_state == GameState.BOSS_FIGHT:
             self.level.draw(self.current_level, self.game_state)
