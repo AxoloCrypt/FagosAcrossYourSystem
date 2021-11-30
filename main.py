@@ -1002,6 +1002,7 @@ class App:
                     pyxel.stop()
                     self.score += 1000
                     self.game_state = GameState.COMPLETED
+                    pyxel.play(3, 30, loop=False)
 
                 update_list(self.bacterias)
                 cleanup_list(self.bacterias)
@@ -1047,10 +1048,11 @@ class App:
         blast_list.clear()
 
         if pyxel.btnp(pyxel.KEY_ENTER):
-            pyxel.play(3, 9)
             pyxel.stop()
+            pyxel.play(3, 9)
             if self.current_level == 2:
                 self.restart_final_level()
+                pyxel.playm(4, loop=True)
             else:
                 self.start_new_game()
                 pyxel.playm(2, loop=True)
