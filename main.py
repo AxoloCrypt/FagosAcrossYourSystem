@@ -113,13 +113,23 @@ def select_boss_sound(current_level):
     return switch.get(current_level, 0)
 
 
-def select_level_music(game_state, level):
+def select_scene_music(game_state):
     switch = {
         GameState.TITTLE: 1,
         GameState.RUNNING: 2,
         GameState.BOSS_FIGHT: 3
     }
     return switch.get(game_state, 0)
+
+
+def select_level_music(level):
+    switch = {
+        0: 2,
+        1: 2,
+        2: 0
+    }
+
+    return switch.get(level, 0)
 
 
 # Player class
@@ -690,6 +700,7 @@ class Hud:
     def __init__(self):
         self.score_text = ""
         self.score_text_x = 0
+        self.score_text_y = 0
         self.lives_text = ""
         self.lives_text_x = 20
         self.paused = "PAUSED"
@@ -705,6 +716,13 @@ class Hud:
 
         if level == 1:
             pyxel.text(self.score_text_x - 10, 1, self.score_text, 5)
+
+    def draw_final_score(self, score):
+        self.score_text = str(score)
+        self.score_text_x = center_text(self.score_text, 192)
+        self.score_text_y = center_text(self.score_text, 126)
+
+        pyxel.text(self.score_text_x + 20, self.score_text_y + 19, self.score_text, pyxel.frame_count % 16)
 
     # Draw the number of lives in the upper right corner
     def draw_lives(self, lives, current_level, game_state):
@@ -760,13 +778,13 @@ class App:
         self.current_level = 0
         self.music = 0
 
-        self.music = select_level_music(self.game_state, self.level)
+        self.music = select_scene_music(self.game_state)
         pyxel.playm(self.music, loop=True)
         pyxel.run(self.update, self.draw)
 
     def update(self):
 
-        self.music = select_level_music(self.game_state, self.level)
+        self.music = select_scene_music(self.game_state)
 
         if self.game_state == GameState.RUNNING or self.game_state == GameState.BOSS_FIGHT:
             self.update_play_scene()
@@ -808,7 +826,7 @@ class App:
             pyxel.stop()
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
-        if self.current_level == 2 and self.score >= 4000:
+        if self.current_level == 2 and self.score >= 4500 and self.game_state == GameState.RUNNING:
             pyxel.stop()
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
@@ -923,6 +941,7 @@ class App:
                         and bb.y + bb.h > self.fago.y
                 ):
                     bb.alive = False
+                    pyxel.play(2, 14)
                     self.lives -= 1
                     blast_list.append(
                         Blast(bb.x + 16 / 2, bb.y + 16 / 2)
@@ -935,12 +954,13 @@ class App:
                     and self.bosses[self.current_level].y + self.bosses[self.current_level].h > self.fago.y
                     and self.fago.y + self.fago.h > self.bosses[self.current_level].y
             ):
+                pyxel.play(2, 14)
                 self.lives -= 1
 
             if not self.bosses[self.current_level].alive:
+                pyxel.stop()
                 self.game_state = GameState.LEVEL_COMPLETE
                 self.score += 500
-
             # Update lists
             update_list(bullet_list)
             update_list(boss_bullet_list)
@@ -965,9 +985,6 @@ class App:
                             ba.health -= 10
                             pyxel.play(2, 10)
 
-                        if not ba.alive:
-                            self.score += 250
-
                 # Check collisions between the player and the bacterias
                 for ba in self.bacterias:
                     if (
@@ -976,9 +993,11 @@ class App:
                             and ba.y + ba.h > self.fago.y
                             and self.fago.y + self.fago.h > ba.y
                     ):
+                        pyxel.play(2, 14)
                         self.lives -= 1
 
                 if not self.bosses[2].alive:
+                    self.score += 1000
                     self.game_state = GameState.COMPLETED
 
                 update_list(self.bacterias)
@@ -1028,6 +1047,7 @@ class App:
                 self.restart_final_level()
             else:
                 self.start_new_game()
+                pyxel.playm(2, loop=True)
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
 
@@ -1040,6 +1060,8 @@ class App:
             pyxel.stop()
             pyxel.play(3, 9)
             self.start_new_level()
+            level_music = select_level_music(self.current_level)
+            pyxel.playm(level_music, loop=True)
 
     def update_game_complete_scene(self):
         boss_bullet_list.clear()
@@ -1166,6 +1188,7 @@ class App:
 
         if self.game_state == GameState.COMPLETED:
             self.level.draw(self.current_level, self.game_state)
+            self.hud.draw_final_score(self.score)
 
         if self.game_state == GameState.BOSS_FIGHT:
             self.level.draw(self.current_level, self.game_state)
