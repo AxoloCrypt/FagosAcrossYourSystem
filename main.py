@@ -126,7 +126,7 @@ def select_level_music(level):
     switch = {
         0: 2,
         1: 2,
-        2: 0
+        2: 4
     }
 
     return switch.get(level, 0)
@@ -464,7 +464,7 @@ class Boss:
         if current_level == 0:
             # Shoot two bullets when the player shoots
             if pyxel.btnp(pyxel.KEY_SPACE):
-                pyxel.play(2, 7)
+                pyxel.play(2, 24)
                 boss_bullet_list.append(
                     Bullet(
                         self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
@@ -477,7 +477,7 @@ class Boss:
                 )
         if current_level == 1:
             if pyxel.btnp(pyxel.KEY_SPACE):
-                pyxel.play(2, 7)
+                pyxel.play(2, 24)
                 boss_bullet_list.append(
                     Bullet(
                         self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
@@ -506,7 +506,7 @@ class Boss:
                 )
         if current_level == 2:
             if pyxel.btnp(pyxel.KEY_SPACE):
-                pyxel.play(2, 7)
+                pyxel.play(2, 24)
                 boss_bullet_list.append(
                     Bullet(
                         self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
@@ -915,6 +915,7 @@ class App:
                         blast_list.append(
                             Blast(a.x + 16 / 2, a.y + 16 / 2)
                         )
+                        pyxel.play(2, 7)
 
             # Check collisions between player bullets and the current boss
             for b in bullet_list:
@@ -959,6 +960,7 @@ class App:
 
             if not self.bosses[self.current_level].alive:
                 pyxel.stop()
+                pyxel.play(3, 27)
                 self.game_state = GameState.LEVEL_COMPLETE
                 self.score += 500
             # Update lists
@@ -997,6 +999,7 @@ class App:
                         self.lives -= 1
 
                 if not self.bosses[2].alive:
+                    pyxel.stop()
                     self.score += 1000
                     self.game_state = GameState.COMPLETED
 
@@ -1018,7 +1021,10 @@ class App:
         #
         if aux == 0:  # When aux is 0, change the game state
             self.game_state = GameState.BOSS_FIGHT
-            pyxel.playm(3, loop=True)
+            if self.current_level == 0 or self.current_level == 1:
+                pyxel.playm(3, loop=True)
+            if self.current_level == 2:
+                pyxel.playm(5, loop=True)
 
     def update_paused_scene(self):
         if pyxel.btnp(pyxel.KEY_ENTER):
