@@ -659,6 +659,8 @@ class Level:
             pyxel.bltm(0, 0, 5, self.u, self.v, 64, 16)
         elif state == GameState.GAMEOVER:
             pyxel.bltm(0, 0, 6, self.u, self.v, 64, 16)
+        elif state == GameState.COMPLETED:
+            pyxel.bltm(0, 0, 7, self.u, self.v, 64, 16)
 
         if state == GameState.BOSS_FIGHT:
             pyxel.bltm(0, 0, level, 72, 0, self.w, self.h)
@@ -724,7 +726,7 @@ class App:
         self.enemies_killed = 0
         self.score = 0
         self.previous_score = 0
-        self.game_state = GameState.TITTLE
+        self.game_state = GameState.COMPLETED
         self.previous_game_state = None
         self.current_level = 0
         pyxel.run(self.update, self.draw)
@@ -1078,6 +1080,9 @@ class App:
             self.level.draw(self.current_level, self.game_state)
 
         if self.game_state == GameState.GAMEOVER:
+            self.level.draw(self.current_level, self.game_state)
+
+        if self.game_state == GameState.COMPLETED:
             self.level.draw(self.current_level, self.game_state)
 
         if self.game_state == GameState.BOSS_FIGHT:
