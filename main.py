@@ -95,16 +95,31 @@ def right_text(text, page_width, char_width=pyxel.FONT_WIDTH):
     return page_width - (text_width + char_width)
 
 
+# Hud class handles drawing text and scores
+def center_text(text, page_width, char_width=pyxel.FONT_WIDTH):
+    text_witdh = len(text) * char_width
+    return (page_width - text_witdh) / 2
+
+
 # param: int
 # Select the sound of the boss depending on the current level
 def select_boss_sound(current_level):
     switch = {
-        0: 3,
+        0: 8,
         1: 2,
         2: 1
     }
 
     return switch.get(current_level, 0)
+
+
+def select_level_music(game_state, level):
+    switch = {
+        GameState.TITTLE: 1,
+        GameState.RUNNING: 2,
+        GameState.BOSS_FIGHT: 3
+    }
+    return switch.get(game_state, 0)
 
 
 # Player class
@@ -439,6 +454,7 @@ class Boss:
         if current_level == 0:
             # Shoot two bullets when the player shoots
             if pyxel.btnp(pyxel.KEY_SPACE):
+                pyxel.play(2, 7)
                 boss_bullet_list.append(
                     Bullet(
                         self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
@@ -451,6 +467,7 @@ class Boss:
                 )
         if current_level == 1:
             if pyxel.btnp(pyxel.KEY_SPACE):
+                pyxel.play(2, 7)
                 boss_bullet_list.append(
                     Bullet(
                         self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
@@ -479,6 +496,7 @@ class Boss:
                 )
         if current_level == 2:
             if pyxel.btnp(pyxel.KEY_SPACE):
+                pyxel.play(2, 7)
                 boss_bullet_list.append(
                     Bullet(
                         self.x + (self.w + 8) / 2, self.y + 48 / 2, is_boss=True
@@ -674,6 +692,11 @@ class Hud:
         self.score_text_x = 0
         self.lives_text = ""
         self.lives_text_x = 20
+        self.paused = "PAUSED"
+        self.paused_x = 10
+        self.enter = "PRESS ENTER TO CONTINUE"
+        self.enter_x = center_text(self.enter, SCREEN_WIDTH)
+        self.enter_y = center_text(self.enter, SCREEN_HEIGHT)
 
     def draw_score(self, score, level):
         self.score_text = str(score)
@@ -702,6 +725,12 @@ class Hud:
         elif current_level == 2 and game_state == GameState.BOSS_FIGHT:
             pyxel.blt(self.lives_text_x - 10, 1, 0, 56, 128, 8, 8)
 
+    def draw_pause(self):
+        pyxel.rect(self.paused_x - 1, 0, len(self.paused) * pyxel.FONT_WIDTH + 1, pyxel.FONT_HEIGHT + 1, 1)
+        pyxel.text(self.paused_x, 1, self.paused, 3)
+        pyxel.text(self.enter_x, self.enter_y, self.enter, pyxel.frame_count % 16)
+        pyxel.text(self.enter_x + 15, self.enter_y + 20, "PRESS Q TO QUIT", pyxel.frame_count % 16)
+
 
 class App:
     def __init__(self):
@@ -726,12 +755,19 @@ class App:
         self.enemies_killed = 0
         self.score = 0
         self.previous_score = 0
-        self.game_state = GameState.COMPLETED
+        self.game_state = GameState.TITTLE
         self.previous_game_state = None
         self.current_level = 0
+        self.music = 0
+
+        self.music = select_level_music(self.game_state, self.level)
+        pyxel.playm(self.music, loop=True)
         pyxel.run(self.update, self.draw)
 
     def update(self):
+
+        self.music = select_level_music(self.game_state, self.level)
+
         if self.game_state == GameState.RUNNING or self.game_state == GameState.BOSS_FIGHT:
             self.update_play_scene()
 
@@ -756,19 +792,24 @@ class App:
     def update_play_scene(self):
         self.level.update(self.game_state)
         if pyxel.btnp(pyxel.KEY_TAB):
+            pyxel.play(3, 9)
             self.previous_game_state = self.game_state
             self.game_state = GameState.PAUSED
 
         if self.lives <= 0:
+            pyxel.playm(0, loop=False)
             self.game_state = GameState.GAMEOVER
 
         if self.current_level == 0 and self.score >= 300 and self.game_state == GameState.RUNNING:
+            pyxel.stop()
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
         if self.current_level == 1 and self.score >= 2500 and self.game_state == GameState.RUNNING:
+            pyxel.stop()
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
         if self.current_level == 2 and self.score >= 4000:
+            pyxel.stop()
             pyxel.play(3, 6)
             self.game_state = GameState.TRANSITION
 
@@ -783,6 +824,7 @@ class App:
 
             if self.enemies_killed == 20:
                 self.enemies_killed = 0
+                pyxel.play(2, 11)
                 self.lives += 1
 
             # Check if elements of bullet_list and enemy_list intersect each other
@@ -815,6 +857,7 @@ class App:
                         and enemy.y + enemy.h > self.fago.y
                 ):
                     enemy.alive = False
+                    pyxel.play(2, 14)
                     self.lives -= 1
                     blast_list.append(
                         Blast(
@@ -920,6 +963,7 @@ class App:
                                 Blast(b.x + 16 / 2, b.y + 16 / 2)
                             )
                             ba.health -= 10
+                            pyxel.play(2, 10)
 
                         if not ba.alive:
                             self.score += 250
@@ -955,14 +999,22 @@ class App:
         #
         if aux == 0:  # When aux is 0, change the game state
             self.game_state = GameState.BOSS_FIGHT
+            pyxel.playm(3, loop=True)
 
     def update_paused_scene(self):
         if pyxel.btnp(pyxel.KEY_ENTER):
+            pyxel.play(3, 9)
             self.game_state = self.previous_game_state
+        if pyxel.btnp(pyxel.KEY_Q):
+            pyxel.play(3, 9)
+            pyxel.quit()
 
     def update_tittle_scene(self):
         if pyxel.btnp(pyxel.KEY_ENTER):
+            pyxel.stop()
+            pyxel.play(3, 9)
             self.game_state = GameState.RUNNING
+            pyxel.playm(2, loop=True)
 
     def update_gameover_scene(self):
         boss_bullet_list.clear()
@@ -970,6 +1022,8 @@ class App:
         blast_list.clear()
 
         if pyxel.btnp(pyxel.KEY_ENTER):
+            pyxel.play(3, 9)
+            pyxel.stop()
             if self.current_level == 2:
                 self.restart_final_level()
             else:
@@ -983,6 +1037,8 @@ class App:
         blast_list.clear()
 
         if pyxel.btnp(pyxel.KEY_ENTER):
+            pyxel.stop()
+            pyxel.play(3, 9)
             self.start_new_level()
 
     def update_game_complete_scene(self):
@@ -993,7 +1049,11 @@ class App:
         self.bacterias.clear()
 
         if pyxel.btnp(pyxel.KEY_Q):
+            pyxel.play(3, 9)
             pyxel.quit()
+        if pyxel.btnp(pyxel.KEY_ENTER):
+            pyxel.play(3, 9)
+            self.start_new_game()
 
     # Reset the stats after the player it's killed
     def start_new_game(self):
@@ -1075,6 +1135,28 @@ class App:
 
         if self.game_state == GameState.TRANSITION:
             self.transition_blast.draw()
+
+        if self.game_state == GameState.PAUSED:
+            if self.previous_game_state == GameState.RUNNING:
+                self.level.draw(self.current_level, self.previous_game_state)
+
+                self.hud.draw_score(self.score, self.current_level)
+                self.hud.draw_pause()
+
+                self.fago.draw(self.current_level, self.game_state)
+                draw_bullet_list(bullet_list, self.current_level, self.previous_game_state)
+                draw_list(enemy_list)
+                draw_list(blast_list)
+            elif self.previous_game_state == GameState.BOSS_FIGHT:
+                self.level.draw(self.current_level, self.previous_game_state)
+
+                self.hud.draw_score(self.score, self.current_level)
+                self.hud.draw_pause()
+                self.fago.draw(self.current_level, self.game_state)
+
+                self.bosses[self.current_level].draw(self.current_level)  # Draw current boss
+                draw_bullet_list(bullet_list, self.current_level, self.game_state)
+                draw_bullet_list(boss_bullet_list, self.current_level, self.game_state)
 
         if self.game_state == GameState.LEVEL_COMPLETE:
             self.level.draw(self.current_level, self.game_state)
