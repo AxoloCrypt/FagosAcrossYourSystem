@@ -647,7 +647,7 @@ class Level:
         if state == GameState.RUNNING:
             pyxel.bltm(self.x, 0, level, self.u, self.v, self.w, self.h)
         elif state == GameState.TITTLE:
-            pyxel.bltm(0, 0, 3, self.u, self.v, 16, 16)
+            pyxel.bltm(0, 0, 3, self.u, self.v, 64, 16)
 
         if state == GameState.BOSS_FIGHT:
             pyxel.bltm(0, 0, level, 72, 0, self.w, self.h)
