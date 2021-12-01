@@ -1096,6 +1096,9 @@ class App:
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bacterias = []
+        self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 8.0))
+        self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 104, Directions.DOWN))
         self.lives = 10
         self.enemies_killed = 0
         self.score = 0
