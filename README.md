@@ -12,6 +12,18 @@ Created using [pyxel](https://github.com/kitao/pyxel) retro game engine under MI
 This game was created for the Game Off 2021.
 We hope you like it!
 
+## Controls
+
+| Keys        | Commands               | Obs                                                           |
+| ----------- | ---------------------- | ------------------------------------------------------------- |
+| TAB         | PAUSE                  |                                                               |
+| Q           | Quit                   | While the game it's in pause or instructed on the game.       |
+| ENTER       | Resume the game        |                                                               |
+| Arrow Keys  | Movement               |                                                               |
+| Space       | Shoot                  | While the player is in attack state (press X to change state) |
+| X           | Change Player State    | Press X to change the state to attack or movement.            |
+| Esc         | Close the game         |                                                               |
+
 ## Credits
 - Juan Carlos Cardona (Username: JuCa) Programming and Sound
 - Renata Ochoa (Username: Renosaurio) Graphics and Mapping
