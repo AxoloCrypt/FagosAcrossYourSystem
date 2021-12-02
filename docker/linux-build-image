@@ -17,8 +17,8 @@ RUN pip3 install -U pyinstaller
 
 WORKDIR /tmp/fagos
 
-ADD main.py /tmp/fagos/
-ADD assets/ /tmp/fagos/assets/
-ADD images-fagos/ /tmp/fagos/images-fagos/
+ADD ./main.py /tmp/fagos/
+ADD ./assets/ /tmp/fagos/assets/
+ADD ./images-fagos/ /tmp/fagos/images-fagos/
 
 RUN pyxelpackager main.py

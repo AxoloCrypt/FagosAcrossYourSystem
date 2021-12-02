@@ -32,7 +32,7 @@ We hope you like it!
 
 ### Linux
 ```
-docker build -t pyxel-build .
+docker build -t pyxel-build -f ./docker/linux-build-image .
 docker create --name extract pyxel-build
 docker cp extract:/tmp/fagos/dist/main ./fagos
 docker rm extract
