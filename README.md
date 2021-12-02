@@ -8,8 +8,7 @@ To survive you must shoot your DNA to these enemies to prevent the total infesta
 
 ## About
 Created using [pyxel](https://github.com/kitao/pyxel) retro game engine under MIT license. 
-
-This game was created for the Game Off 2021.
+This game was created for the Game Off 2021.  
 We hope you like it!
 
 ## Controls
