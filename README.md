@@ -34,6 +34,6 @@ We hope you like it!
 ```
 docker build -t pyxel-build -f ./docker/linux-build-image .
 docker create --name extract pyxel-build
-docker cp extract:/tmp/fagos/dist/main ./fagos
+docker cp extract:/tmp/fagos/dist/main ./fagos-linux-bin
 docker rm extract
 ```
