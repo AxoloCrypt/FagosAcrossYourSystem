@@ -36,3 +36,8 @@ docker create --name extract pyxel-build
 docker cp extract:/tmp/fagos/dist/main ./fagos-linux-bin
 docker rm extract
 ```
+
+### Run Application (pyxel 1.5.0 or higher)
+```
+pyxel play main.pyxapp
+```
