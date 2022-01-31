@@ -23,10 +23,6 @@ We hope you like it!
 | X           | Change Player State    | Press X to change the state to attack or movement.            |
 | Esc         | Close the game         |                                                               |
 
-## Credits
-- Juan Carlos Cardona (Username: JuCa) Programming and Sound
-- Renata Ochoa (Username: Renosaurio) Graphics and Mapping
-
 ## Build
 
 ### Linux
