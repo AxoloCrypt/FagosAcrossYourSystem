@@ -291,7 +291,7 @@ class Fago:
                 self.state = FagoState.MOVING
                 self.speed += 1
         if self.state == FagoState.ATTACKING:
-            if pyxel.btnp(pyxel.KEY_SPACE):
+            if pyxel.btnp(pyxel.KEY_SPACE, hold=0, repeat=10):
                 pyxel.play(3, 4)
                 Bullet(
                     self.x + (self.w + 8) / 2, self.y + 8 / 2
@@ -664,8 +664,8 @@ class Level:
         self.tm = 0
         self.u = 0
         self.v = 0
-        self.w = 64
-        self.h = 16
+        self.w = SCREEN_WIDTH
+        self.h = SCREEN_HEIGHT
 
     def update(self, state):
         # Move the level tilemap and repeat it constantly while the game is in GameState.Running
@@ -678,22 +678,22 @@ class Level:
     def draw(self, level, state):
 
         if state == GameState.RUNNING:
-            pyxel.bltm(self.x, 0, level, self.u, self.v, self.w, self.h)
+            pyxel.bltm(self.x, 0, level, self.u, self.v, self.w * 2, self.h)
         elif state == GameState.TITTLE:
-            pyxel.bltm(0, 0, 3, self.u, self.v, 64, 16)
+            pyxel.bltm(0, 0, 3, self.u, self.v, self.w, self.h)
         elif level == 0 and state == GameState.LEVEL_COMPLETE:
-            pyxel.bltm(0, 0, 4, self.u, self.v, 64, 16)
+            pyxel.bltm(0, 0, 4, self.u, self.v, self.w, self.h)
         elif level == 1 and state == GameState.LEVEL_COMPLETE:
-            pyxel.bltm(0, 0, 5, self.u, self.v, 64, 16)
+            pyxel.bltm(0, 0, 5, self.u, self.v, self.w, self.h)
         elif state == GameState.GAMEOVER:
-            pyxel.bltm(0, 0, 6, self.u, self.v, 64, 16)
+            pyxel.bltm(0, 0, 6, self.u, self.v, self.w, self.h)
         elif state == GameState.COMPLETED:
-            pyxel.bltm(0, 0, 7, self.u, self.v, 64, 16)
+            pyxel.bltm(0, 0, 7, self.u, self.v, self.w, self.h)
 
         if state == GameState.BOSS_FIGHT:
-            pyxel.bltm(0, 0, level, 72, 0, self.w, self.h)
+            pyxel.bltm(0, 0, level, 580, 0, self.w, self.h)
         elif level == 1 and state == GameState.BOSS_FIGHT:
-            pyxel.bltm(0, 0, level, 96, 0, self.w, self.h)
+            pyxel.bltm(72, 0, level, 96, 0, self.w, self.h)
 
 
 class Hud:
@@ -753,7 +753,7 @@ class Hud:
 class App:
     def __init__(self):
         # Init screen
-        pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, caption="Fagos Across Your System", fps=60, fullscreen=False)
+        pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Fagos Across Your System", fps=60)
         # File where the resources are loaded
         pyxel.load("assets/pyxres.resources.pyxres")
         # Initialize variables
@@ -1028,7 +1028,7 @@ class App:
                 pyxel.playm(5, loop=True)
 
     def update_paused_scene(self):
-        if pyxel.btnp(pyxel.KEY_ENTER):
+        if pyxel.btnp(pyxel.KEY_RETURN):
             pyxel.play(3, 9)
             self.game_state = self.previous_game_state
         if pyxel.btnp(pyxel.KEY_Q):
@@ -1036,7 +1036,7 @@ class App:
             pyxel.quit()
 
     def update_tittle_scene(self):
-        if pyxel.btnp(pyxel.KEY_ENTER):
+        if pyxel.btnp(pyxel.KEY_RETURN):
             pyxel.stop()
             pyxel.play(3, 9)
             self.game_state = GameState.RUNNING
@@ -1047,7 +1047,7 @@ class App:
         bullet_list.clear()
         blast_list.clear()
 
-        if pyxel.btnp(pyxel.KEY_ENTER):
+        if pyxel.btnp(pyxel.KEY_RETURN):
             pyxel.stop()
             pyxel.play(3, 9)
             if self.current_level == 2:
@@ -1064,7 +1064,7 @@ class App:
         bullet_list.clear()
         blast_list.clear()
 
-        if pyxel.btnp(pyxel.KEY_ENTER):
+        if pyxel.btnp(pyxel.KEY_RETURN):
             pyxel.stop()
             pyxel.play(3, 9)
             self.start_new_level()
@@ -1081,7 +1081,7 @@ class App:
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.play(3, 9)
             pyxel.quit()
-        if pyxel.btnp(pyxel.KEY_ENTER):
+        if pyxel.btnp(pyxel.KEY_RETURN):
             pyxel.play(3, 9)
             self.start_new_game()
 
