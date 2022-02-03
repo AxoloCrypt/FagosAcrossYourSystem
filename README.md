@@ -19,8 +19,7 @@ We hope you like it!
 | Q           | Quit                   | While the game it's in pause or instructed on the game.       |
 | ENTER       | Resume the game        |                                                               |
 | Arrow Keys  | Movement               |                                                               |
-| Space       | Shoot                  | While the player is in attack state (press X to change state) |
-| X           | Change Player State    | Press X to change the state to attack or movement.            |
+| Space       | Shoot                  |                                                               |
 | Esc         | Close the game         |                                                               |
 
 ## Build
@@ -33,7 +32,21 @@ docker cp extract:/tmp/fagos/dist/main ./fagos-linux-bin
 docker rm extract
 ```
 
-### Run Application (pyxel 1.5.0 or higher)
+## Run Application (pyxel 1.5.0 or higher)
+> Make sure you have pyxel retro game engine installed. 
+#### Windows
 ```
-pyxel play main.pyxapp
+pip install -U pyxel
+```
+#### Linux
+```
+sudo pip3 install -U pyxel
+```
+#### MacOs
+```
+pip3 install -U pyxel
+```
+After installing pyxel go to the current location of the .pyxapp file and use the following command:
+```
+pyxel play FagosAcrossYourSystem.pyxapp
 ```
