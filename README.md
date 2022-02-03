@@ -50,3 +50,5 @@ After installing pyxel go to the current location of the .pyxapp file and use th
 ```
 pyxel play FagosAcrossYourSystem.pyxapp
 ```
+## Contributing 
+See the [Contributing Guideline](https://github.com/AxoloCrypt/FagosAcrossYourSystem/blob/master/CONTRIBUTING.md).
