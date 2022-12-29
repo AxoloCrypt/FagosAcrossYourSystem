@@ -1,3 +1,6 @@
+import pyxel
+
+
 class TransitionBlast:
     def __init__(self, x, y):
         self.x = x
