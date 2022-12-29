@@ -1,16 +1,20 @@
+import pyxel
+from enums.enums import GameState
+
 class Level:
-    def __init__(self):
+    def __init__(self, screen_height, screen_height, speed=0):
         self.x = 0
         self.tm = 0
         self.u = 0
         self.v = 0
-        self.w = SCREEN_WIDTH
-        self.h = SCREEN_HEIGHT
+        self.w = screen_height
+        self.h = screen_height
+        self.speed = speed
 
     def update(self, state):
         # Move the level tilemap and repeat it constantly while the game is in GameState.Running
         if state != GameState.BOSS_FIGHT and state == GameState.RUNNING:
-            self.x -= LEVEL_SPEED
+            self.x -= self.speed
             repeat_width = self.w / 2
             if 0 - self.x > repeat_width:
                 self.x = 0

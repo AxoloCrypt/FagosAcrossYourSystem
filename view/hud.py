@@ -1,5 +1,22 @@
+import pyxel
+from enums.enums import GameState
+
+
+# param: string, int, char_width default pyxel font width
+# Helper function for calculating the start x value for right aligned text.
+def right_text(text, page_width, char_width=pyxel.FONT_WIDTH):
+    text_width = len(text) * char_width
+    return page_width - (text_width + char_width)
+
+
+# Hud class handles drawing text and scores
+def center_text(text, page_width, char_width=pyxel.FONT_WIDTH):
+    text_width = len(text) * char_width
+    return (page_width - text_width) / 2
+
+
 class Hud:
-    def __init__(self):
+    def __init__(self, screen_height, screen_width):
         self.score_text = ""
         self.score_text_x = 0
         self.score_text_y = 0
@@ -8,8 +25,8 @@ class Hud:
         self.paused = "PAUSED"
         self.paused_x = 10
         self.enter = "PRESS ENTER TO CONTINUE"
-        self.enter_x = center_text(self.enter, SCREEN_WIDTH)
-        self.enter_y = center_text(self.enter, SCREEN_HEIGHT)
+        self.enter_x = center_text(self.enter, screen_width)
+        self.enter_y = center_text(self.enter, screen_height)
 
     def draw_score(self, score, level):
         self.score_text = str(score)
