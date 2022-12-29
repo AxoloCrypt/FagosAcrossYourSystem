@@ -6,7 +6,7 @@ import time
 
 # End level Boss class
 class Boss:
-    def __init__(self, x, y, speed=0):
+    def __init__(self, x, y, speed):
         self.x = x
         self.y = y
         self.speed = speed
@@ -16,7 +16,7 @@ class Boss:
         self.h = 32
         self.offset = int(random() * 100)
 
-    def update(self, current_level, boss_bullet_list, screen_width=0):
+    def update(self, current_level, boss_bullet_list, screen_width):
         # Boss movement
         if (pyxel.frame_count + self.offset) % 96 < 60:
             self.y -= self.speed

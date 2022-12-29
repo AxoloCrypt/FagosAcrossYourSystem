@@ -16,7 +16,7 @@ class Bacteria:
         self.h = 16
         self.offset = int(random() * 120)
 
-    def update(self, boss_bullet_list=None):
+    def update(self, boss_bullet_list):
         # print((pyxel.frame_count + self.offset) % 96)
         # Bacteria movement in the x coordinate
         if (pyxel.frame_count + self.offset) % 96 < 60:

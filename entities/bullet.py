@@ -1,11 +1,14 @@
 import pyxel
 from enums.enums import GameState
 
+BULLET_SPEED = 2.5
+BOSS_BULLET_SPEED = 2.0
+SCREEN_WIDTH = 192
+
 
 class Bullet:
     def __init__(self, x, y, is_bacteria=False,
-                 is_boss=False, is_vertical=False, is_diagonal_up=False, is_diagonal_down=False,
-                 boss_bullet_list=None, bullet_list=None, bullet_speed=0, SCREEN_WIDTH=0):
+                 is_boss=False, is_vertical=False, is_diagonal_up=False, is_diagonal_down=False):
         self.x = x
         self.y = y
         self.w = 8
@@ -16,13 +19,8 @@ class Bullet:
         self.is_vertical = is_vertical
         self.is_diagonal_up = is_diagonal_up
         self.is_diagonal_down = is_diagonal_down
-        self.bullet_speed = bullet_speed
+        self.bullet_speed = BOSS_BULLET_SPEED if self.is_boss else BULLET_SPEED
         self.SCREEN_WIDTH = SCREEN_WIDTH
-
-        if self.is_boss or self.is_bacteria:
-            boss_bullet_list.append(self)
-        else:
-            bullet_list.append(self)
 
     def update(self):
         if self.is_bacteria and self.is_diagonal_up:

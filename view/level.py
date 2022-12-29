@@ -1,13 +1,14 @@
 import pyxel
 from enums.enums import GameState
 
+
 class Level:
-    def __init__(self, screen_height, screen_height, speed=0):
+    def __init__(self, screen_width, screen_height, speed=0):
         self.x = 0
         self.tm = 0
         self.u = 0
         self.v = 0
-        self.w = screen_height
+        self.w = screen_width
         self.h = screen_height
         self.speed = speed
 
@@ -29,7 +30,7 @@ class Level:
             pyxel.bltm(0, 0, 4, self.u, self.v, self.w, self.h)
         elif level == 1 and state == GameState.LEVEL_COMPLETE:
             pyxel.bltm(0, 0, 5, self.u, self.v, self.w, self.h)
-        elif state == GameState.GAMEOVER:
+        elif state == GameState.GAME_OVER:
             pyxel.bltm(0, 0, 6, self.u, self.v, self.w, self.h)
         elif state == GameState.COMPLETED:
             pyxel.bltm(0, 0, 7, self.u, self.v, self.w, self.h)

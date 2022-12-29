@@ -3,7 +3,7 @@ import pyxel
 
 
 class Enemy:
-    def __init__(self, x, y, enemy_list=None, speed=0):
+    def __init__(self, x, y, speed):
         self.x = x
         self.y = y
         self.speed = speed
@@ -14,8 +14,6 @@ class Enemy:
         self.offset = int(random() * 60)
         self.sprite_x = 0
         self.sprite_y = 0
-
-        enemy_list.append(self)
 
     # Move the enemy up and down while moving to -x coordinates
     # set if it is alive or not

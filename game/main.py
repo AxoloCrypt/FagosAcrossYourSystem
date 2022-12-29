@@ -1,15 +1,20 @@
-import time
 from random import random
 import pyxel
-import enum
+from enums.enums import GameState, Directions
+from view.level import Level
+from view.hud import Hud
+from entities.fago import Fago
+from entities.enemy import Enemy
+from entities.boss import Boss
+from entities.bacteria import Bacteria
+from fx.transition_blast import TransitionBlast
+from fx.blast import Blast
 
 # Const values
 SCREEN_WIDTH = 192
 SCREEN_HEIGHT = 128
 
 FAGO_SPEED = 1.0
-BULLET_SPEED = 2.5
-BOSS_BULLET_SPEED = 2.0
 ENEMY_SPEED = 1.5
 BOSS_SPEED = 2.0
 LEVEL_SPEED = 0.1
@@ -17,8 +22,6 @@ bullet_list = []
 boss_bullet_list = []
 enemy_list = []
 blast_list = []
-
-
 
 
 # param: list
@@ -39,7 +42,10 @@ def draw_bullet_list(list, current_level, game_state):
 # update the elements of the given list
 def update_list(list):
     for elem in list:
-        elem.update()
+        if isinstance(elem, Bacteria):
+            elem.update(boss_bullet_list)
+        else:
+            elem.update()
 
 
 # param: list
@@ -59,19 +65,6 @@ def cleanup_list(list):
             list.pop(i)
         else:
             i += 1
-
-
-# param: string, int, char_width default pyxel font width
-# Helper function for calculating the start x value for right aligned text.
-def right_text(text, page_width, char_width=pyxel.FONT_WIDTH):
-    text_width = len(text) * char_width
-    return page_width - (text_width + char_width)
-
-
-# Hud class handles drawing text and scores
-def center_text(text, page_width, char_width=pyxel.FONT_WIDTH):
-    text_witdh = len(text) * char_width
-    return (page_width - text_witdh) / 2
 
 
 # param: int
@@ -110,16 +103,16 @@ class App:
         # Init screen
         pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Fagos Across Your System", fps=60)
         # File where the resources are loaded
-        pyxel.load("assets/pyxres.resources.pyxres")
+        pyxel.load("../assets/pyxres.resources.pyxres")
         # Initialize variables
-        self.level = Level()
-        self.hud = Hud()
+        self.level = Level(SCREEN_WIDTH, SCREEN_HEIGHT, LEVEL_SPEED)
+        self.hud = Hud(SCREEN_HEIGHT, SCREEN_WIDTH)
         self.transition_blast = TransitionBlast(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-        self.fago = Fago(32, 32)
+        self.fago = Fago(32, 32, FAGO_SPEED)
         self.bosses = []
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
         self.bacterias = []
         self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 8.0))
         self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 104, Directions.DOWN))
@@ -150,7 +143,7 @@ class App:
         if self.game_state == GameState.PAUSED:
             self.update_paused_scene()
 
-        if self.game_state == GameState.GAMEOVER:
+        if self.game_state == GameState.GAME_OVER:
             self.update_gameover_scene()
 
         if self.game_state == GameState.LEVEL_COMPLETE:
@@ -171,7 +164,7 @@ class App:
 
         if self.lives <= 0:
             pyxel.playm(0, loop=False)
-            self.game_state = GameState.GAMEOVER
+            self.game_state = GameState.GAME_OVER
 
         if self.current_level == 0 and self.score >= 300 and self.game_state == GameState.RUNNING:
             pyxel.stop()
@@ -193,7 +186,7 @@ class App:
             # Spawn 10 enemies on screen
             if pyxel.frame_count % 6 == 0:
                 if len(enemy_list) < 10:
-                    Enemy(pyxel.width, random() * (pyxel.height - 10))
+                    enemy_list.append(Enemy(pyxel.width, random() * (pyxel.height - 10), ENEMY_SPEED))
 
             if self.enemies_killed == 20:
                 self.enemies_killed = 0
@@ -240,7 +233,7 @@ class App:
                     )
 
             # Update player, bullet_list and enemy_list
-            self.fago.update()
+            self.fago.update(bullet_list)
             update_list(bullet_list)
             update_enemy_list(enemy_list, self.current_level)
             update_list(blast_list)
@@ -252,8 +245,8 @@ class App:
 
         # Updating when the boss fight begins
         if self.game_state == GameState.BOSS_FIGHT:
-            self.fago.update()
-            self.bosses[self.current_level].update(self.current_level)
+            self.fago.update(bullet_list)
+            self.bosses[self.current_level].update(self.current_level, boss_bullet_list, SCREEN_WIDTH)
 
             # Check collisions between player bullets and boss bullets
             for a in bullet_list:
@@ -445,7 +438,7 @@ class App:
         bullet_list.clear()
         enemy_list.clear()
         blast_list.clear()
-        self.fago = Fago(32, 32)
+        self.fago = Fago(32, 32, FAGO_SPEED)
         self.fago_direction = Directions.DOWN
         self.bosses = []
         self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
@@ -469,9 +462,9 @@ class App:
         blast_list.clear()
 
         self.bosses = []
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
         self.lives = self.lives
         self.enemies_killed = self.enemies_killed
         self.score = self.score
@@ -479,7 +472,7 @@ class App:
         self.game_state = GameState.RUNNING
         self.previous_game_state = None
         self.current_level += 1
-        self.fago = Fago(32, 32)
+        self.fago = Fago(32, 32, FAGO_SPEED)
         self.fago_direction = Directions.DOWN
 
     def restart_final_level(self):
@@ -489,9 +482,9 @@ class App:
         blast_list.clear()
 
         self.bosses = []
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
-        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
+        self.bosses.append(Boss(SCREEN_WIDTH - 24, SCREEN_HEIGHT / 2 - 16, BOSS_SPEED))
         self.bacterias = []
         self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 8.0))
         self.bacterias.append(Bacteria((SCREEN_WIDTH / 2) + 24, 104, Directions.DOWN))
@@ -501,7 +494,7 @@ class App:
         self.game_state = GameState.RUNNING
         self.previous_game_state = None
         self.current_level = 2
-        self.fago = Fago(32, 32)
+        self.fago = Fago(32, 32, FAGO_SPEED)
         self.fago_direction = Directions.DOWN
 
     def draw(self):
@@ -550,7 +543,7 @@ class App:
         if self.game_state == GameState.LEVEL_COMPLETE:
             self.level.draw(self.current_level, self.game_state)
 
-        if self.game_state == GameState.GAMEOVER:
+        if self.game_state == GameState.GAME_OVER:
             self.level.draw(self.current_level, self.game_state)
 
         if self.game_state == GameState.COMPLETED:

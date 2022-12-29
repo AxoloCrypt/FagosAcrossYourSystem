@@ -44,7 +44,7 @@ class Fago:
 
         pyxel.blt(self.x, self.y, 0, sprite_x, sprite_y, width, height)  # Draw player
 
-    def update(self):
+    def update(self, bullet_list):
         if pyxel.btn(pyxel.KEY_UP):
             self.y -= self.speed
             self.direction = Directions.UP
@@ -68,9 +68,10 @@ class Fago:
         # Change player state
         if pyxel.btnp(pyxel.KEY_SPACE, hold=0, repeat=10):
             pyxel.play(3, 4)
-            Bullet(
-                self.x + (self.w + 8) / 2, self.y + 8 / 2
-            )  # Instantiate a Bullet class object
+            bullet_list.append(
+                Bullet(
+                    self.x + (self.w + 8) / 2, self.y + 8 / 2
+                ))  # Instantiate a Bullet class object
 
     def get_pos(self):
         return self.x, self.y

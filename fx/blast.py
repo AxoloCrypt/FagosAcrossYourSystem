@@ -2,13 +2,11 @@ import pyxel
 
 
 class Blast:
-    def __init__(self, x, y, blast_list=None):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
         self.radius = 1
         self.alive = True
-
-        blast_list.append(self)
 
     def update(self):
         self.radius += 1
