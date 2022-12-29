@@ -1,3 +1,9 @@
+from enums.enums import Directions
+from random import random
+import pyxel
+from entities.bullet import Bullet
+
+
 # Support bacteria class from the final boss
 class Bacteria:
     def __init__(self, x, y, direction=Directions.UP):
@@ -10,7 +16,7 @@ class Bacteria:
         self.h = 16
         self.offset = int(random() * 120)
 
-    def update(self):
+    def update(self, boss_bullet_list=None):
         # print((pyxel.frame_count + self.offset) % 96)
         # Bacteria movement in the x coordinate
         if (pyxel.frame_count + self.offset) % 96 < 60:
@@ -42,22 +48,3 @@ class Bacteria:
 
     def draw(self):
         pyxel.blt(self.x, self.y, 0, 112, 88, self.w, self.h)
-
-
-class Blast:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.radius = 1
-        self.alive = True
-
-        blast_list.append(self)
-
-    def update(self):
-        self.radius += 1
-        if self.radius > 8:
-            self.alive = False
-
-    def draw(self):
-        pyxel.circ(self.x, self.y, self.radius, 8)
-        pyxel.circb(self.x, self.y, self.radius, 2)

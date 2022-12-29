@@ -1,7 +1,12 @@
+from random import random
+import pyxel
+
+
 class Enemy:
-    def __init__(self, x, y):
+    def __init__(self, x, y, enemy_list=None, speed=0):
         self.x = x
         self.y = y
+        self.speed = speed
         self.w = 16
         self.h = 16
         # self.dir = Directions.LEFT
@@ -16,7 +21,7 @@ class Enemy:
     # set if it is alive or not
     def update(self, current_level):
         if (pyxel.frame_count + self.offset) % 60 < 30:
-            self.y -= ENEMY_SPEED
+            self.y -= self.speed
 
             if current_level == 0:
                 self.sprite_x = 64
@@ -29,7 +34,7 @@ class Enemy:
                 self.sprite_y = 112
 
         else:
-            self.y += ENEMY_SPEED
+            self.y += self.speed
 
             if current_level == 0:
                 self.sprite_x = 104
@@ -41,7 +46,7 @@ class Enemy:
                 self.sprite_x = 120
                 self.sprite_y = 112
 
-        self.x -= ENEMY_SPEED
+        self.x -= self.speed
 
         # Check if the character it's out of bounces
         # if True keep the character in the selected position

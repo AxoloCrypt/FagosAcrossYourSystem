@@ -1,3 +1,8 @@
+import pyxel
+from enums.enums import GameState, Directions
+from entities.bullet import Bullet
+
+
 # Player class
 class Fago:
     def __init__(self, x, y, speed):
@@ -17,7 +22,7 @@ class Fago:
 
         # Select the sprite_x and sprite_x depending on the direction, current level and game state
         # If else yanderev style
-        # My future me it's going to hate this, but it works
+        # My future me it's going to hate this, but it works (Yeah, I actually hate you. Me from 2022)
         if current_level == 0 and (game_state == GameState.RUNNING or game_state == GameState.PAUSED):
             sprite_x = 136
             sprite_y = 0
